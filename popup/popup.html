@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LMS Monitor - Status</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="header-title">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>LMS Monitor</h1>
+      </div>
+      <span class="status-badge" id="global-status">Idle</span>
+    </header>
+
+    <!-- Navigation / Launch Bar -->
+    <div class="action-bar">
+      <button id="open-dashboard" class="btn btn-primary">
+        <span>🖥️</span> Open Detailed Dashboard
+      </button>
+      <button id="open-playground" class="btn btn-secondary" title="Open Test Playground">
+        <span>🧪</span>
+      </button>
+    </div>
+
+    <!-- Monitored Courses List -->
+    <main class="content-viewport">
+      <div class="section-title">
+        <h2>Monitored Courses</h2>
+        <span class="count-badge" id="courses-count">0</span>
+      </div>
+      <div class="course-list" id="course-list-container">
+        <!-- Dynamically populated course cards -->
+        <div class="empty-state">
+          <p>No courses actively monitored yet.</p>
+          <span class="instruction">Visit D2L Classlist or Canvas Gradebook pages to start tracking.</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+      <span>100% Offline Privacy</span>
+      <span class="footer-dot">•</span>
+      <span>v1.0.0</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

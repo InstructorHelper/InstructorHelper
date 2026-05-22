@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "LMS Monitor (Brightspace & Canvas)",
+  "version": "1.0.0",
+  "description": "Monitors class lists and gradebooks on D2L Brightspace and Canvas LMS. Logs and alerts you to changes.",
+  "permissions": [
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "*://learn.rrc.ca/d2l/lms/classlist/classlist.d2l*",
+    "*://learn.rrc.ca/d2l/lms/grades/admin/enter/grade_item_edit.d2l*",
+    "*://learn.rrc.ca/d2l/lms/grades/admin/enter/user_list_view.d2l*",
+    "*://awsacademy.instructure.com/courses/*/gradebook*",
+    "*://awsacademy.instructure.com/courses/*/grades*"
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://learn.rrc.ca/d2l/lms/classlist/classlist.d2l*",
+        "*://learn.rrc.ca/d2l/lms/grades/admin/enter/user_list_view.d2l*"
+      ],
+      "js": ["content/d2l_classlist.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": ["*://learn.rrc.ca/d2l/lms/grades/admin/enter/grade_item_edit.d2l*"],
+      "js": ["content/d2l_grade_copier.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "*://awsacademy.instructure.com/courses/*/gradebook*",
+        "*://awsacademy.instructure.com/courses/*/grades*"
+      ],
+      "js": ["content/canvas_gradebook.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "options_page": "dashboard/dashboard.html"
+}

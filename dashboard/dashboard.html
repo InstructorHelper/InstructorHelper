@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LMS Monitor - Dedicated Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="header-logo">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>LMS Monitor Dashboard</h1>
+      </div>
+      
+      <!-- Top Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="tab-link active" data-tab="tab-monitor">Course Monitor</button>
+        <button class="tab-link" data-tab="tab-logs">Change Log History</button>
+      </nav>
+      
+      <div class="header-status">
+        <span class="status-badge" id="global-status">Idle</span>
+      </div>
+    </header>
+
+    <!-- Content Sections -->
+    <main class="content-viewport">
+      
+      <!-- Tab 1: Course Monitor -->
+      <section id="tab-monitor" class="tab-content active">
+        <div class="grid-layout">
+          <!-- Left Sidebar: Monitored Courses -->
+          <aside class="sidebar-panel">
+            <div class="section-header">
+              <h2>Monitored Courses</h2>
+              <span class="count-badge" id="courses-count">0</span>
+            </div>
+            
+            <div class="course-list-scrollable" id="course-list-container">
+              <!-- Dynamically populated course list items -->
+              <div class="empty-state">
+                <p>No active courses.</p>
+                <span class="instruction">Scan D2L or Canvas pages.</span>
+              </div>
+            </div>
+
+            <!-- Global Action Center at bottom of sidebar -->
+            <div class="sidebar-actions">
+              <h3>System Actions</h3>
+              <button id="open-playground" class="btn btn-primary btn-sm">
+                <span>🧪</span> Open Test Playground
+              </button>
+              <button id="export-csv" class="btn btn-secondary btn-sm">
+                <span>📊</span> Export Logs (CSV)
+              </button>
+              <button id="copy-debug" class="btn btn-secondary btn-sm">
+                <span>📋</span> Copy Debug Info
+              </button>
+              <button id="clear-logs" class="btn btn-danger btn-sm">
+                <span>🗑️</span> Reset Extension Database
+              </button>
+            </div>
+          </aside>
+
+          <!-- Right Main Area: Selected Course Operations -->
+          <article class="main-panel" id="main-panel-container">
+            <!-- Dynamically populated when a course is selected -->
+            <div class="no-selection-state">
+              <div class="no-selection-card">
+                <span class="large-icon">👈</span>
+                <h2>Select a Course</h2>
+                <p>Choose a monitored course from the sidebar to link sections, view roster discrepancies, copy student emails, and manage snapshots.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Tab 2: Change Log History -->
+      <section id="tab-logs" class="tab-content">
+        <div class="logs-layout">
+          <div class="logs-header-row">
+            <div class="section-header">
+              <h2>Detected Change Timeline</h2>
+              <span class="count-badge" id="logs-count">0</span>
+            </div>
+            <div class="filter-group">
+              <label for="log-filter">Filter Category:</label>
+              <select id="log-filter" class="form-select">
+                <option value="all">All Changes</option>
+                <option value="classlist">Classlist Only</option>
+                <option value="grades">Grades Only</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="log-timeline-container" id="log-timeline-container">
+            <!-- Dynamically populated change records -->
+            <div class="empty-state">
+              <p>No changes detected.</p>
+              <span class="instruction">Snapshots will log updates automatically as they are detected.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <span>LMS Brightspace & Canvas Monitor</span>
+      <span class="footer-dot">•</span>
+      <span>100% Local Storage & Privacy</span>
+      <span class="footer-dot">•</span>
+      <span>v1.0.0</span>
+    </footer>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

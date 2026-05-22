@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LMS Monitor - Test Playground</title>
+  <link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <div class="playground-container">
+    <header class="playground-header">
+      <div class="header-logo">
+        <span class="logo-icon">🧪</span>
+        <h1>LMS Monitor Playground</h1>
+      </div>
+      <p class="header-desc">Simulate Canvas Gradebook and D2L Classlist environments to verify the monitoring and change-detection systems.</p>
+    </header>
+
+    <main class="playground-grid">
+      <!-- Controls Panel -->
+      <section class="panel controls-panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="control-group">
+          <h3>D2L Classlist Actions</h3>
+          <div class="button-row">
+            <button id="d2l-add-student" class="btn btn-success">➕ Add Student</button>
+            <button id="d2l-remove-student" class="btn btn-danger">➖ Remove Student</button>
+            <button id="d2l-change-role" class="btn btn-warning">🔄 Toggle Role</button>
+          </div>
+          <button id="d2l-trigger-scrape" class="btn btn-primary btn-full">Run Classlist Scraper</button>
+        </div>
+
+        <div class="control-group">
+          <h3>Canvas Gradebook Actions</h3>
+          <div class="button-row">
+            <button id="canvas-add-student" class="btn btn-success">➕ Add Student Record</button>
+            <button id="canvas-change-grade" class="btn btn-warning">📝 Modify Grade</button>
+            <button id="canvas-remove-student" class="btn btn-danger">➖ Remove Student Record</button>
+          </div>
+          <div class="checkbox-row">
+            <label>
+              <input type="checkbox" id="canvas-student-view" checked>
+              Simulate Student View (DOM Scrape)
+            </label>
+          </div>
+          <button id="canvas-trigger-scrape" class="btn btn-primary btn-full">Run Grades Scraper</button>
+        </div>
+
+        <div class="control-group">
+          <h3>Local Storage Management</h3>
+          <div class="button-row">
+            <button id="view-storage" class="btn btn-info">🔍 Inspect local.storage</button>
+            <button id="clear-storage" class="btn btn-danger">🗑️ Clear Extension Database</button>
+          </div>
+          <pre id="storage-display" class="storage-pre">Click "Inspect local.storage" to view state...</pre>
+        </div>
+
+        <div class="control-group">
+          <h3>Automated Unit Tests</h3>
+          <button id="run-tests-btn" class="btn btn-primary btn-full">🧪 Run Unit Tests</button>
+          <div id="test-results-container" class="storage-pre" style="display: none; max-height: 200px; overflow-y: auto; margin-top: 10px; font-family: monospace;"></div>
+        </div>
+      </section>
+
+      <!-- Mock Environment Display -->
+      <section class="panel environment-panel">
+        <div class="tabs">
+          <button id="tab-d2l" class="tab-btn active">D2L Brightspace Classlist</button>
+          <button id="tab-canvas" class="tab-btn">Canvas LMS (Instructure)</button>
+        </div>
+
+        <!-- Mock D2L Area -->
+        <div id="d2l-env" class="env-area active">
+          <div class="mock-browser-bar">
+            <span class="url-label">Address:</span>
+            <input type="text" class="url-input" value="https://learn.rrc.ca/d2l/lms/classlist/classlist.d2l?ou=753180" readonly>
+          </div>
+          
+          <div class="mock-page-content">
+            <!-- Simulated D2L DOM -->
+            <header>
+              <nav class="d2l-navigation-s d2l-branding-navigation-dark-foreground-color d2l-navigation-s-linkarea-no-color">
+                <d2l-labs-navigation has-skip-nav="">
+                  <d2l-labs-navigation-main-header>
+                    <div class="d2l-labs-navigation-header-left" slot="left">
+                      <div class="d2l-navigation-s-header-open-button-wrapper">
+                        <d2l-labs-navigation-button-icon icon="tier3:menu-hamburger" text="Menu" text-hidden="" tooltip-offset="0"></d2l-labs-navigation-button-icon>
+                      </div>
+                      <div class="d2l-navigation-s-header-logo-area">
+                        <d2l-labs-navigation-link-icon class="d2l-navigation-s-home-icon" text="My Home" href="/d2l/lp/ouHome/defaultHome.d2l" text-hidden="" icon="tier1:home" tooltip-offset="0"></d2l-labs-navigation-link-icon>
+                        <d2l-labs-navigation-separator class="d2l-navigation-s-logo-divider"></d2l-labs-navigation-separator>
+                        <d2l-labs-navigation-link-image class="d2l-navigation-s-logo" src="/d2l/lp/navbars/6605/theme/viewimage/2500370/view?v=20.26.4.27748" text="COMP-2045 (283184) Cloud Infrastructure" href="/d2l/lp/ouHome/home.d2l?ou=753180" slim="" tooltip-offset="0"></d2l-labs-navigation-link-image>
+                        <d2l-labs-navigation-separator class="d2l-navigation-s-title-divider"></d2l-labs-navigation-separator>
+                        <div class="d2l-navigation-s-title-container">
+                          <a class="d2l-navigation-s-link" href="/d2l/home/753180" title="COMP-2045 (283184) Cloud Infrastructure">COMP-2045 (283184) Cloud Infrastructure</a>
+                        </div>
+                      </div>
+                    </div>
+                  </d2l-labs-navigation-main-header>
+                </d2l-labs-navigation>
+              </nav>
+            </header>
+            
+            <div class="d2l-content-body">
+              <div class="d2l-sub-nav" style="margin-bottom: 12px; display: flex; gap: 8px;">
+                <button id="btn-d2l-classlist" class="sub-tab-btn active" style="padding: 6px 12px; background: #312e81; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">Classlist Page</button>
+                <button id="btn-d2l-user-list" class="sub-tab-btn" style="padding: 6px 12px; background: #1e293b; color: #94a3b8; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">Enter Grades (User List View)</button>
+                <button id="btn-d2l-enter-grades" class="sub-tab-btn" style="padding: 6px 12px; background: #1e293b; color: #94a3b8; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">Grade Item Edit Page</button>
+              </div>
+
+              <h2 class="d2l-page-title" id="d2l-page-title">Classlist</h2>
+              
+              <!-- Table 1: Classlist -->
+              <table id="z_e" class="d2l-table d2l-grid d_gl" type="list" summary="This table is a list of class participants.">
+                <tbody id="d2l-student-table-body">
+                  <!-- Dynamic rows go here -->
+                </tbody>
+              </table>
+
+              <!-- Table 2: Enter Grades (Initially hidden) -->
+              <table id="d2l-enter-grades-table" class="d2l-table d2l-grid d_gl" style="display: none; width: 100%;">
+                <thead>
+                  <tr class="d_gh">
+                    <th style="width: 1%;"><input type="checkbox"></th>
+                    <th>Learner</th>
+                    <th>Org Defined ID</th>
+                    <th>Grade</th>
+                    <th>Weighted Grade</th>
+                    <th>Scheme</th>
+                    <th>Feedback</th>
+                  </tr>
+                </thead>
+                <tbody id="d2l-grades-table-body">
+                  <!-- Dynamic grade entry rows go here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mock Canvas Area -->
+        <div id="canvas-env" class="env-area">
+          <div class="mock-browser-bar">
+            <span class="url-label">Address:</span>
+            <input type="text" id="canvas-url" class="url-input" value="https://awsacademy.instructure.com/courses/172153/grades?course_id=172153" readonly>
+          </div>
+          
+          <div class="mock-page-content">
+            <!-- Simulated Canvas DOM -->
+            <div class="canvas-header">
+              <h1 id="section-tabs-header" class="course-title">AWS Cloud Foundation Course</h1>
+            </div>
+            
+            <div class="canvas-content-body">
+              <!-- Student View grades summary table -->
+              <div id="canvas-student-dom-container">
+                <h2>Grades for Demo Student</h2>
+                <table id="grades_summary" class="canvas-table">
+                  <thead>
+                    <tr>
+                      <th>Name (Assignment)</th>
+                      <th>Due</th>
+                      <th>Score</th>
+                      <th>Out Of</th>
+                    </tr>
+                  </thead>
+                  <tbody id="canvas-student-table-body">
+                    <!-- Dynamic student rows -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Instructor View description (since it relies on APIs, we'll explain and show DOM fallback table) -->
+              <div id="canvas-instructor-dom-container" style="display: none;">
+                <h2>Gradebook (Instructor View)</h2>
+                <p class="info-note">In Instructor View, the extension parses Canvas's local APIs. If the API fails, it scrapes this table structure:</p>
+                <div class="slick-grid-simulator">
+                  <div class="slick-header">
+                    <div class="slick-header-column">Student Name
+Student Name Options</div>
+                    <div class="slick-header-column">Lab 1: S3 Bucket
+Out of 100
+Lab 1 Options</div>
+                    <div class="slick-header-column">Lab 2: EC2 Instances
+Out of 100
+Lab 2 Options</div>
+                    <div class="slick-header-column">Exam 1
+Out of 100
+Exam 1 Options</div>
+                  </div>
+                  <div class="slick-viewport" id="canvas-instructor-grid-body">
+                    <!-- Dynamic slick-rows -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Load playground controller -->
+  <script src="playground.js"></script>
+  <!-- Load unit tests -->
+  <script src="tests.js"></script>
+</body>
+</html>
