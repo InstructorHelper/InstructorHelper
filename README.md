@@ -8,7 +8,7 @@ A Chrome extension designed for instructors to simplify roster synchronization, 
 
 1. **Classlist & Roster Scraping**:
    - Automatically scrapes student details (Name, Org-Defined ID, Username, and Email) directly from the D2L Brightspace Classlist/User List View.
-   - Using the Org-Defined ID (e.g., student number `0397431`) is critical to ensure accurate matching, especially when students share the exact same first and last names.
+   - Using the Org-Defined ID (e.g., student number `0123456`) is critical to ensure accurate matching, especially when students share the exact same first and last names.
 
 2. **Canvas Matching**:
    - Matches D2L student entries with the Canvas Gradebook roster using unique emails and IDs.

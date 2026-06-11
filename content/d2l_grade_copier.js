@@ -257,7 +257,7 @@ console.log("LMS Monitor: D2L Grade Copier script injected");
     d2lStudents: [], // { rowElement, learnerText, name, id, inputElement }
     matchedList: [], // { d2lStudent, canvasStudent, score, isMatched }
     activeTab: 'matcher', // 'matcher' or 'canvas-table'
-    canvasSortField: 'name', // 'name' or 'grade'
+    canvasSortField: 'name', // 'name', 'orgId' or 'grade'
     canvasSortDirection: 'asc' // 'asc' or 'desc'
   };
 
@@ -1315,16 +1315,62 @@ console.log("LMS Monitor: D2L Grade Copier script injected");
       });
 
     } else if (state.activeTab === 'canvas-table') {
-      const sortedCanvasStudents = [...(state.canvasSnapshot || [])];
-      
+      const sortedCanvasStudents = [...(state.canvasSnapshot || [])].map(student => {
+        const matchedItem = state.matchedList.find(item => item.canvasStudent && String(item.canvasStudent.studentId) === String(student.studentId));
+
+        // Resolve D2L Org ID for this Canvas student
+        let d2lOrgId = null;
+
+        // 1. Check in matchedList
+        if (matchedItem && matchedItem.d2lStudent && matchedItem.d2lStudent.id) {
+          d2lOrgId = matchedItem.d2lStudent.id;
+        }
+
+        // 2. Fallback to d2lSnapshot via email matching
+        if (!d2lOrgId && student.studentEmail && state.d2lSnapshot) {
+          const snapMatch = state.d2lSnapshot.find(s => s.email && s.email.toLowerCase() === student.studentEmail.toLowerCase());
+          if (snapMatch && snapMatch.id) {
+            d2lOrgId = snapMatch.id;
+          }
+        }
+
+        // 3. Fallback to smartNameMatch against d2lSnapshot
+        if (!d2lOrgId && state.d2lSnapshot) {
+          const snapMatch = state.d2lSnapshot.find(s => {
+            if (s.email && student.studentEmail && s.email.toLowerCase() !== student.studentEmail.toLowerCase()) {
+              return false;
+            }
+            return s.name && smartNameMatch(s.name, student.studentName, student.studentEmail);
+          });
+          if (snapMatch && snapMatch.id) {
+            d2lOrgId = snapMatch.id;
+          }
+        }
+
+        return {
+          student,
+          matchedItem,
+          d2lOrgId: d2lOrgId || ''
+        };
+      });
+
       sortedCanvasStudents.sort((a, b) => {
         let valA, valB;
         if (state.canvasSortField === 'name') {
-          valA = (a.studentName || '').toLowerCase();
-          valB = (b.studentName || '').toLowerCase();
+          valA = (a.student.studentName || '').toLowerCase();
+          valB = (b.student.studentName || '').toLowerCase();
+        } else if (state.canvasSortField === 'orgId') {
+          valA = a.d2lOrgId || '';
+          valB = b.d2lOrgId || '';
+          if (!valA && !valB) return 0;
+          if (!valA) return state.canvasSortDirection === 'asc' ? 1 : -1;
+          if (!valB) return state.canvasSortDirection === 'asc' ? -1 : 1;
+          return state.canvasSortDirection === 'asc'
+            ? valA.localeCompare(valB, undefined, { numeric: true })
+            : valB.localeCompare(valA, undefined, { numeric: true });
         } else if (state.canvasSortField === 'grade') {
-          const gradeAObj = a.grades ? a.grades[state.selectedAssignment] : null;
-          const gradeBObj = b.grades ? b.grades[state.selectedAssignment] : null;
+          const gradeAObj = a.student.grades ? a.student.grades[state.selectedAssignment] : null;
+          const gradeBObj = b.student.grades ? b.student.grades[state.selectedAssignment] : null;
           valA = gradeAObj ? parseFloat(extractNumerator(gradeAObj.score)) : -1;
           valB = gradeBObj ? parseFloat(extractNumerator(gradeBObj.score)) : -1;
           if (isNaN(valA)) valA = -1;
@@ -1351,7 +1397,7 @@ console.log("LMS Monitor: D2L Grade Copier script injected");
       table.innerHTML = `
         <thead>
           <tr>
-            <th style="width: 70px;">Org ID</th>
+            <th id="th-org-id" style="width: 70px;" ${isSortActive('orgId')}>Org ID<span class="sort-icon">${getSortIndicator('orgId')}</span></th>
             <th id="th-name" ${isSortActive('name')}>Name<span class="sort-icon">${getSortIndicator('name')}</span></th>
             <th id="th-grade" style="text-align: center;" ${isSortActive('grade')}>Grade<span class="sort-icon">${getSortIndicator('grade')}</span></th>
             <th style="text-align: right;">Action</th>
@@ -1369,44 +1415,14 @@ console.log("LMS Monitor: D2L Grade Copier script injected");
         tr.innerHTML = `<td colspan="4" class="no-data-msg" style="border: none;">No Canvas students found.</td>`;
         tbody.appendChild(tr);
       } else {
-        sortedCanvasStudents.forEach((student) => {
+        sortedCanvasStudents.forEach(({ student, matchedItem, d2lOrgId }) => {
           const tr = document.createElement('tr');
           
           const gradeObj = student.grades ? student.grades[state.selectedAssignment] : null;
           const scoreDisplay = gradeObj && gradeObj.score ? gradeObj.score : 'Ungraded';
           const rawNumerator = gradeObj ? extractNumerator(gradeObj.score) : '';
           
-          const matchedItem = state.matchedList.find(item => item.canvasStudent && String(item.canvasStudent.studentId) === String(student.studentId));
           const canFill = matchedItem && matchedItem.d2lStudent && matchedItem.d2lStudent.inputElement;
-          
-          // Resolve D2L Org ID for this Canvas student
-          let d2lOrgId = null;
-          
-          // 1. Check in matchedList
-          if (matchedItem && matchedItem.d2lStudent && matchedItem.d2lStudent.id) {
-            d2lOrgId = matchedItem.d2lStudent.id;
-          }
-          
-          // 2. Fallback to d2lSnapshot via email matching
-          if (!d2lOrgId && student.studentEmail && state.d2lSnapshot) {
-            const snapMatch = state.d2lSnapshot.find(s => s.email && s.email.toLowerCase() === student.studentEmail.toLowerCase());
-            if (snapMatch && snapMatch.id) {
-              d2lOrgId = snapMatch.id;
-            }
-          }
-          
-          // 3. Fallback to smartNameMatch against d2lSnapshot
-          if (!d2lOrgId && state.d2lSnapshot) {
-            const snapMatch = state.d2lSnapshot.find(s => {
-              if (s.email && student.studentEmail && s.email.toLowerCase() !== student.studentEmail.toLowerCase()) {
-                return false;
-              }
-              return s.name && smartNameMatch(s.name, student.studentName, student.studentEmail);
-            });
-            if (snapMatch && snapMatch.id) {
-              d2lOrgId = snapMatch.id;
-            }
-          }
 
           tr.innerHTML = `
             <td class="org-id-cell" title="${d2lOrgId || '—'}">${d2lOrgId || '—'}</td>
@@ -1438,8 +1454,19 @@ console.log("LMS Monitor: D2L Grade Copier script injected");
       }
 
       // Event listeners for table headers
+      const thOrgId = table.querySelector('#th-org-id');
       const thName = table.querySelector('#th-name');
       const thGrade = table.querySelector('#th-grade');
+
+      thOrgId.addEventListener('click', () => {
+        if (state.canvasSortField === 'orgId') {
+          state.canvasSortDirection = state.canvasSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.canvasSortField = 'orgId';
+          state.canvasSortDirection = 'asc';
+        }
+        renderStudentList();
+      });
       
       thName.addEventListener('click', () => {
         if (state.canvasSortField === 'name') {
