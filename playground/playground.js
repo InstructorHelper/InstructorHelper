@@ -320,13 +320,13 @@ function renderD2LGrades() {
       <td><input type="checkbox"></td>
       <td>
         <div style="font-weight: 500;">
-          <a class="d2l-link" href="#" style="color: #6366f1; text-decoration: none;">${learnerText}</a>
+          <a class="d2l-link" href="#" style="color: #b10806; text-decoration: none;">${learnerText}</a>
           <div style="display:none;"><a href="mailto:${s.email}">Email ${s.name}</a></div>
         </div>
       </td>
       <td>${s.orgId}</td>
       <td>
-        <input type="text" class="d2l-input-grade" style="padding: 4px 8px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; border-radius: 4px; width: 60px;" value=""> / 100
+        <input type="text" class="d2l-input-grade" style="padding: 4px 8px; border: 1px solid #e5bdb7; background: #ffffff; color: #281715; border-radius: 4px; width: 60px;" value=""> / 100
       </td>
       <td>-</td>
       <td>-</td>

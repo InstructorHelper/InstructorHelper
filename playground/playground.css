@@ -1,18 +1,20 @@
 /* Playground CSS Styles */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
 :root {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-panel: #111827;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent-color: #4f46e5;
-  --accent-hover: #4338ca;
-  --success-color: #10b981;
-  --danger-color: #ef4444;
-  --warning-color: #f59e0b;
-  --info-color: #06b6d4;
-  --border-color: #334155;
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --bg-primary: #fff8f6;
+  --bg-secondary: #fff0ee;
+  --bg-panel: #ffffff;
+  --text-primary: #281715;
+  --text-secondary: #5c403b;
+  --accent-color: #b10806;
+  --accent-hover: #930001;
+  --success-color: #2a7f43;
+  --danger-color: #ba1a1a;
+  --warning-color: #735c00;
+  --info-color: #005a98;
+  --border-color: #e5bdb7;
+  --font-family: 'Manrope', system-ui, -apple-system, sans-serif;
 }
 
 body {
@@ -47,10 +49,9 @@ body {
 
 .playground-header h1 {
   margin: 0;
+  font-family: 'Playfair Display', serif;
   font-size: 28px;
-  background: linear-gradient(135deg, #a5b4fc, #6366f1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-color);
 }
 
 .header-desc {
@@ -71,7 +72,7 @@ body {
   border-radius: 12px;
   border: 1px solid var(--border-color);
   padding: 20px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 20px rgba(51, 51, 51, 0.04);
 }
 
 .panel h2 {
@@ -80,14 +81,14 @@ body {
   font-size: 18px;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 8px;
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 /* Control Buttons & Groups */
 .control-group {
   margin-bottom: 24px;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  border-bottom: 1px solid rgba(144, 111, 106, 0.24);
 }
 
 .control-group:last-child {
@@ -149,39 +150,39 @@ body {
 }
 
 .btn-success {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background-color: rgba(42, 127, 67, 0.12);
+  color: var(--success-color);
+  border: 1px solid rgba(42, 127, 67, 0.28);
 }
 .btn-success:hover {
-  background-color: rgba(16, 185, 129, 0.3);
+  background-color: rgba(42, 127, 67, 0.2);
 }
 
 .btn-danger {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background-color: rgba(186, 26, 26, 0.1);
+  color: var(--danger-color);
+  border: 1px solid rgba(186, 26, 26, 0.28);
 }
 .btn-danger:hover {
-  background-color: rgba(239, 68, 68, 0.3);
+  background-color: rgba(186, 26, 26, 0.16);
 }
 
 .btn-warning {
-  background-color: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background-color: rgba(115, 92, 0, 0.1);
+  color: var(--warning-color);
+  border: 1px solid rgba(115, 92, 0, 0.28);
 }
 .btn-warning:hover {
-  background-color: rgba(245, 158, 11, 0.3);
+  background-color: rgba(115, 92, 0, 0.18);
 }
 
 .btn-info {
-  background-color: rgba(6, 182, 212, 0.2);
-  color: #22d3ee;
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  background-color: rgba(0, 90, 152, 0.1);
+  color: var(--info-color);
+  border: 1px solid rgba(0, 90, 152, 0.28);
 }
 .btn-info:hover {
-  background-color: rgba(6, 182, 212, 0.3);
+  background-color: rgba(0, 90, 152, 0.18);
 }
 
 .btn-full {
@@ -191,13 +192,13 @@ body {
 
 /* Storage Display Pre */
 .storage-pre {
-  background-color: #030712;
+  background-color: #fff8f6;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 10px;
   font-family: 'Courier New', Courier, monospace;
   font-size: 11px;
-  color: #a7f3d0;
+  color: #5c403b;
   max-height: 200px;
   overflow-y: auto;
   white-space: pre-wrap;
@@ -254,7 +255,7 @@ body {
 
 /* Simulated Browser Chrome */
 .mock-browser-bar {
-  background-color: #1e293b;
+  background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-bottom: none;
   border-top-left-radius: 8px;
@@ -272,11 +273,11 @@ body {
 
 .url-input {
   flex: 1;
-  background-color: #0f172a;
-  border: 1px solid #475569;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 4px 8px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-family: inherit;
   font-size: 12px;
 }

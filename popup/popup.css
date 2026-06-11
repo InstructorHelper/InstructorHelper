@@ -1,26 +1,27 @@
-/* Sleek Glassmorphism Dark Theme for Simplified Popup UI */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Editorial Light Theme for Simplified Popup UI */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
 :root {
-  --bg-dark: hsl(222, 47%, 11%);
-  --bg-card: hsl(217, 33%, 17%, 0.85);
-  --bg-card-hover: hsl(217, 33%, 22%, 0.95);
-  --text-main: hsl(210, 40%, 98%);
-  --text-muted: hsl(215, 20%, 65%);
-  --border-glass: hsla(217, 30%, 30%, 0.35);
-  
-  --accent-color: hsl(244, 75%, 63%);
-  --accent-glow: hsla(244, 75%, 63%, 0.45);
+  --bg-dark: #fff8f6;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --bg-card-hover: #ffffff;
+  --text-main: #281715;
+  --text-muted: #5c403b;
+  --border-glass: #e5bdb7;
+
+  --accent-color: #b10806;
+  --accent-glow: rgba(177, 8, 6, 0.26);
+  --primary-soft: #ffe9e6;
   
   /* Status Colors */
-  --green: hsl(150, 84%, 40%);
-  --green-glow: hsla(150, 84%, 40%, 0.15);
-  --red: hsl(0, 84%, 60%);
-  --red-glow: hsla(0, 84%, 60%, 0.15);
-  --orange: hsl(35, 92%, 55%);
-  --orange-glow: hsla(35, 92%, 55%, 0.15);
-  --blue: hsl(199, 89%, 48%);
-  --blue-glow: hsla(199, 89%, 48%, 0.15);
+  --green: #2a7f43;
+  --green-glow: rgba(42, 127, 67, 0.12);
+  --red: #ba1a1a;
+  --red-glow: rgba(186, 26, 26, 0.12);
+  --orange: #735c00;
+  --orange-glow: rgba(115, 92, 0, 0.16);
+  --blue: #005a98;
+  --blue-glow: rgba(0, 90, 152, 0.12);
 }
 
 * {
@@ -33,7 +34,7 @@ body {
   height: 380px;
   background-color: var(--bg-dark);
   color: var(--text-main);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', sans-serif;
   overflow: hidden;
 }
 
@@ -49,7 +50,7 @@ body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(217, 30%, 40%);
+  background: #c9968f;
 }
 
 .popup-container {
@@ -65,7 +66,7 @@ body {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border-glass);
-  background: hsla(222, 47%, 8%, 0.5);
+  background: rgba(255, 240, 238, 0.95);
   backdrop-filter: blur(10px);
 }
 
@@ -84,12 +85,11 @@ body {
 
 .dashboard-header h1 {
   margin: 0;
+  font-family: 'Playfair Display', serif;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-color);
 }
 
 .status-badge {
@@ -108,7 +108,7 @@ body {
   display: flex;
   gap: 8px;
   border-bottom: 1px solid var(--border-glass);
-  background: hsla(222, 47%, 6%, 0.2);
+  background: #fff0ee;
 }
 
 /* Content Area */
@@ -189,7 +189,7 @@ body {
 
 .course-card:hover {
   background: var(--bg-card-hover);
-  border-color: hsla(244, 75%, 63%, 0.35);
+  border-color: rgba(177, 8, 6, 0.35);
   transform: translateY(-1px);
 }
 
@@ -295,7 +295,7 @@ body {
 
 .btn-primary {
   flex: 1;
-  background: linear-gradient(135deg, var(--accent-color) 0%, hsl(244, 75%, 55%) 100%);
+  background: linear-gradient(135deg, #b10806 0%, #930001 100%);
   color: white;
   box-shadow: 0 2px 6px var(--accent-glow);
 }
@@ -312,7 +312,7 @@ body {
 }
 .btn-secondary:hover {
   background: var(--bg-card-hover);
-  border-color: hsl(217, 30%, 40%);
+  border-color: #c9968f;
 }
 
 /* Footer */
@@ -323,7 +323,7 @@ body {
   align-items: center;
   gap: 6px;
   border-top: 1px solid var(--border-glass);
-  background: hsla(222, 47%, 8%, 0.5);
+  background: rgba(255, 240, 238, 0.95);
   font-size: 9px;
   color: var(--text-muted);
 }

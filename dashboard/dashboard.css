@@ -1,29 +1,31 @@
-/* Premium Glassmorphism Dark Theme for Dedicated Dashboard UI */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Luxe Editorial Light Theme for Dedicated Dashboard UI */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
 :root {
-  --bg-dark: hsl(222, 47%, 10%);
-  --bg-darker: hsl(222, 47%, 6%);
-  --bg-card: hsl(217, 33%, 16%, 0.7);
-  --bg-card-hover: hsl(217, 33%, 20%, 0.85);
-  --bg-sidebar: hsl(222, 47%, 8%, 0.8);
-  --text-main: hsl(210, 40%, 98%);
-  --text-muted: hsl(215, 20%, 65%);
-  --border-glass: hsla(217, 30%, 30%, 0.35);
-  --border-glass-hover: hsla(217, 30%, 45%, 0.5);
-  
-  --accent-color: hsl(244, 75%, 63%);
-  --accent-glow: hsla(244, 75%, 63%, 0.35);
+  --bg-dark: #fff8f6;
+  --bg-darker: #fff0ee;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-card-hover: #ffffff;
+  --bg-sidebar: rgba(255, 240, 238, 0.92);
+  --text-main: #281715;
+  --text-muted: #5c403b;
+  --border-glass: #e5bdb7;
+  --border-glass-hover: #c9968f;
+
+  --accent-color: #b10806;
+  --accent-glow: rgba(177, 8, 6, 0.2);
+  --accent-soft: rgba(177, 8, 6, 0.1);
+  --primary-soft: #ffe9e6;
   
   /* Status Colors */
-  --green: hsl(150, 84%, 40%);
-  --green-glow: hsla(150, 84%, 40%, 0.15);
-  --red: hsl(0, 84%, 60%);
-  --red-glow: hsla(0, 84%, 60%, 0.15);
-  --orange: hsl(35, 92%, 55%);
-  --orange-glow: hsla(35, 92%, 55%, 0.15);
-  --blue: hsl(199, 89%, 48%);
-  --blue-glow: hsla(199, 89%, 48%, 0.15);
+  --green: #2a7f43;
+  --green-glow: rgba(42, 127, 67, 0.12);
+  --red: #ba1a1a;
+  --red-glow: rgba(186, 26, 26, 0.12);
+  --orange: #735c00;
+  --orange-glow: rgba(115, 92, 0, 0.16);
+  --blue: #005a98;
+  --blue-glow: rgba(0, 90, 152, 0.12);
 }
 
 * {
@@ -37,7 +39,7 @@ html, body {
   height: 100%;
   background-color: var(--bg-dark);
   color: var(--text-main);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', sans-serif;
   overflow: hidden;
 }
 
@@ -54,7 +56,7 @@ html, body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(217, 30%, 45%);
+  background: var(--border-glass-hover);
 }
 
 .dashboard-container {
@@ -93,12 +95,11 @@ html, body {
 
 .main-header h1 {
   margin: 0;
+  font-family: 'Playfair Display', serif;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-color);
 }
 
 .status-badge {
@@ -117,7 +118,7 @@ html, body {
 .nav-tabs {
   display: flex;
   gap: 8px;
-  background: hsla(222, 47%, 6%, 0.4);
+  background: var(--bg-darker);
   padding: 4px;
   border-radius: 8px;
   border: 1px solid var(--border-glass);
@@ -138,13 +139,13 @@ html, body {
 
 .tab-link:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--primary-soft);
 }
 
 .tab-link.active {
   color: var(--text-main);
   background: var(--bg-card);
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(51, 51, 51, 0.04);
   border: 1px solid var(--border-glass);
 }
 
@@ -153,7 +154,7 @@ html, body {
   flex: 1;
   overflow: hidden;
   position: relative;
-  background: radial-gradient(circle at 50% 50%, hsl(222, 47%, 14%) 0%, var(--bg-dark) 100%);
+  background: radial-gradient(circle at 50% 0%, #fffdfc 0%, var(--bg-dark) 60%, #fff0ee 100%);
 }
 
 .tab-content {
@@ -225,7 +226,7 @@ html, body {
 .sidebar-actions {
   padding: 16px 20px;
   border-top: 1px solid var(--border-glass);
-  background: hsla(222, 47%, 5%, 0.4);
+  background: var(--bg-darker);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -279,9 +280,9 @@ html, body {
 }
 
 .course-item.active {
-  background: hsla(244, 75%, 63%, 0.1);
+  background: var(--accent-soft);
   border-color: var(--accent-color);
-  box-shadow: 0 0 12px hsla(244, 75%, 63%, 0.2);
+  box-shadow: 0 4px 20px var(--accent-glow);
 }
 
 .course-item-header {
@@ -352,7 +353,7 @@ html, body {
   text-align: center;
   padding: 24px;
   color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--bg-darker);
   border-radius: 8px;
   border: 1px dashed var(--border-glass);
 }
@@ -530,7 +531,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.01);
+  background: var(--bg-darker);
   padding: 8px 12px;
   border-radius: 6px;
   border: 1px solid var(--border-glass);
@@ -544,7 +545,7 @@ html, body {
 }
 
 .link-select {
-  background: var(--bg-dark);
+  background: #ffffff;
   border: 1px solid var(--border-glass);
   color: var(--text-main);
   padding: 6px 12px;
@@ -602,13 +603,13 @@ html, body {
 .comparison-status-banner.success {
   background: var(--green-glow);
   color: var(--green);
-  border: 1px solid hsla(150, 84%, 40%, 0.25);
+  border: 1px solid rgba(42, 127, 67, 0.25);
 }
 
 .comparison-status-banner.warning {
   background: var(--orange-glow);
   color: var(--orange);
-  border: 1px solid hsla(35, 92%, 55%, 0.25);
+  border: 1px solid rgba(115, 92, 0, 0.28);
 }
 
 .mismatch-table-container {
@@ -628,7 +629,7 @@ html, body {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: hsla(222, 47%, 12%, 0.4);
+  background: #fffaf8;
   border-bottom: 1px solid var(--border-glass);
   font-size: 13px;
 }
@@ -638,7 +639,7 @@ html, body {
 }
 
 .mismatch-row:hover {
-  background: hsla(222, 47%, 15%, 0.6);
+  background: #fff0ee;
 }
 
 .student-identity {
@@ -663,7 +664,7 @@ html, body {
 
 .mismatch-target-badge {
   font-size: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-darker);
   color: var(--text-muted);
   padding: 1px 5px;
   border-radius: 4px;
@@ -722,7 +723,7 @@ html, body {
 }
 
 .raw-roster-table th {
-  background: hsla(222, 47%, 5%, 0.8);
+  background: #fff0ee;
   padding: 8px 12px;
   color: var(--text-muted);
   font-weight: 600;
@@ -883,7 +884,7 @@ html, body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-color) 0%, hsl(244, 75%, 55%) 100%);
+  background: linear-gradient(135deg, #b10806 0%, #930001 100%);
   color: white;
   box-shadow: 0 4px 10px var(--accent-glow);
 }
@@ -903,13 +904,13 @@ html, body {
 }
 
 .btn-danger {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  color: hsl(0, 84%, 75%);
+  background: rgba(186, 26, 26, 0.08);
+  border: 1px solid rgba(186, 26, 26, 0.24);
+  color: var(--red);
 }
 .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.22);
-  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(186, 26, 26, 0.14);
+  border-color: rgba(186, 26, 26, 0.4);
 }
 
 /* Copy Buttons */
@@ -918,8 +919,8 @@ html, body {
   font-size: 11px;
   font-weight: 600;
   padding: 4px 10px;
-  background: hsla(244, 75%, 63%, 0.15);
-  border: 1px solid hsla(244, 75%, 63%, 0.4);
+  background: var(--accent-soft);
+  border: 1px solid rgba(177, 8, 6, 0.32);
   border-radius: 6px;
   color: var(--text-main);
   cursor: pointer;
@@ -930,7 +931,7 @@ html, body {
 }
 
 .copy-btn:hover {
-  background: hsla(244, 75%, 63%, 0.3);
+  background: rgba(177, 8, 6, 0.2);
   border-color: var(--accent-color);
 }
 
@@ -941,8 +942,8 @@ html, body {
 }
 
 .copy-small-btn {
-  background: hsla(244, 75%, 63%, 0.12);
-  border: 1px solid hsla(244, 75%, 63%, 0.3);
+  background: rgba(177, 8, 6, 0.08);
+  border: 1px solid rgba(177, 8, 6, 0.3);
   color: var(--text-main);
   padding: 2px 6px;
   border-radius: 4px;
@@ -955,7 +956,7 @@ html, body {
 }
 
 .copy-small-btn:hover {
-  background: hsla(244, 75%, 63%, 0.25);
+  background: rgba(177, 8, 6, 0.18);
   border-color: var(--accent-color);
 }
 
@@ -1020,37 +1021,37 @@ html, body {
 .roster-status-badge.status-initial {
   background: var(--border-glass);
   color: var(--text-muted);
-  border-color: hsla(217, 30%, 30%, 0.2);
+  border-color: rgba(144, 111, 106, 0.35);
 }
 
 .roster-status-badge.status-added {
   background: var(--green-glow);
   color: var(--green);
-  border-color: hsla(150, 84%, 40%, 0.25);
+  border-color: rgba(42, 127, 67, 0.25);
 }
 
 .roster-status-badge.status-removed {
   background: var(--red-glow);
   color: var(--red);
-  border-color: hsla(0, 84%, 60%, 0.25);
+  border-color: rgba(186, 26, 26, 0.25);
 }
 .status-removed-row {
   opacity: 0.55;
   text-decoration: line-through;
-  background-color: rgba(239, 68, 68, 0.02) !important;
+  background-color: rgba(186, 26, 26, 0.03) !important;
 }
 
 .status-removed-row:hover {
-  background-color: rgba(239, 68, 68, 0.05) !important;
+  background-color: rgba(186, 26, 26, 0.08) !important;
 }
 
 /* Expandable Student Grade Roster Styles */
 .student-row-expandable:hover {
-  background-color: rgba(255, 255, 255, 0.03) !important;
+  background-color: #fff4f1 !important;
 }
 
 .student-row-expandable.expanded {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-color: #fff0ee !important;
 }
 
 .chevron-cell {
@@ -1069,7 +1070,7 @@ html, body {
 }
 
 .student-grades-detail-row {
-  background-color: hsla(222, 47%, 4%, 0.4);
+  background-color: #fff7f5;
 }
 
 .nested-table-cell {
@@ -1091,7 +1092,7 @@ html, body {
 }
 
 .grades-detail-table th {
-  background: hsla(222, 47%, 8%, 0.9);
+  background: #fff0ee;
   padding: 6px 10px;
   color: var(--text-muted);
   font-weight: 600;
@@ -1100,7 +1101,7 @@ html, body {
 
 .grades-detail-table td {
   padding: 8px 10px;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+  border-bottom: 1px dashed rgba(144, 111, 106, 0.22);
 }
 
 .grades-detail-table tr:last-child td {
@@ -1128,7 +1129,7 @@ html, body {
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 600;
-  border: 1px solid hsla(35, 92%, 55%, 0.2);
+  border: 1px solid rgba(115, 92, 0, 0.25);
 }
 
 .timeline-time {
@@ -1162,7 +1163,7 @@ html, body {
 }
 
 #toggle-sidebar.active-toggle {
-  background: hsla(244, 75%, 63%, 0.15);
+  background: rgba(177, 8, 6, 0.12);
   border-color: var(--accent-color);
   color: var(--text-main);
 }
@@ -1203,7 +1204,7 @@ html, body {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: hsla(222, 47%, 6%, 0.95) !important;
+  background: rgba(255, 240, 238, 0.95) !important;
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border-glass) !important;
 }
