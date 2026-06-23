@@ -257,7 +257,7 @@ console.log("LMS Monitor: D2L Grade Copier script injected");
     d2lStudents: [], // { rowElement, learnerText, name, id, inputElement }
     matchedList: [], // { d2lStudent, canvasStudent, score, isMatched }
     activeTab: 'matcher', // 'matcher' or 'canvas-table'
-    canvasSortField: 'name', // 'name', 'orgId' or 'grade'
+    canvasSortField: 'orgId', // 'name', 'orgId' or 'grade'
     canvasSortDirection: 'asc' // 'asc' or 'desc'
   };
 
