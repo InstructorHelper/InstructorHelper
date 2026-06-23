@@ -1,90 +1,132 @@
-# LMS Monitor (Brightspace & Canvas) — InstructorHelper
+# LMS Monitor (Brightspace & Canvas)
 
-A Chrome extension designed for instructors to simplify roster synchronization, discrepancy monitoring, and grade copying between D2L Brightspace and Canvas LMS.
+InstructorHelper is a Chrome extension for instructors who need to compare Brightspace and Canvas course rosters, monitor enrollment changes, and make grade-transfer workflows easier.
 
----
+The extension is intentionally local-first: it only works when the instructor is already signed in and visiting supported LMS pages, and it stores its working data in browser storage rather than sending student data to an external service.
 
-## Key Features
+## What It Does
 
-1. **Classlist & Roster Scraping**:
-   - Automatically scrapes student details (Name, Org-Defined ID, Username, and Email) directly from the D2L Brightspace Classlist/User List View.
-   - Using the Org-Defined ID (e.g., student number `0123456`) is critical to ensure accurate matching, especially when students share the exact same first and last names.
+- Scrapes roster data from D2L Brightspace classlist and grade-related views.
+- Scrapes student roster data from supported Canvas course gradebook pages.
+- Compares D2L and Canvas rosters to surface mismatches.
+- Tracks roster changes over time and raises badge or notification alerts.
+- Provides a dashboard for reviewing monitored courses, links, and change history.
+- Includes a D2L grade copier workflow for manual grade transfer assistance.
 
-2. **Canvas Matching**:
-   - Matches D2L student entries with the Canvas Gradebook roster using unique emails and IDs.
-   - Offers side-by-side comparison tables.
+## Supported Pages
 
-3. **Discrepancy Detection & Alerting**:
-   - Identifies students who exist in D2L Brightspace but not in Canvas, or vice versa.
-   - Flags roster discrepancies immediately on the central Dashboard.
+The current manifest is scoped to specific LMS hosts and page patterns:
 
-4. **Grade Copier Tool**:
-   - Streamlines transferring grade items from Brightspace to Canvas grade systems.
+- Brightspace classlist pages on `learn.rrc.ca`
+- Brightspace grade item edit pages on `learn.rrc.ca`
+- Brightspace user list view pages on `learn.rrc.ca`
+- Canvas gradebook and grades pages on `awsacademy.instructure.com`
 
-5. **LMS Monitor Dashboard**:
-   - A central dashboard that displays the discrepancy monitoring log, active class rosters, matching statistics, and change history.
-   - Built with modern styling (sleek dark/light theme, custom widgets, scrollable containers).
-   - Designed to take the full space of the window for maximum readability and data scanning.
+If you need this extension to work against a different Brightspace or Canvas domain, update the match patterns in `manifest.json` before loading the extension.
 
----
+## How the Workflow Works
 
-## Directory Structure
+1. Open a supported D2L or Canvas page while signed in.
+2. The matching content script captures the visible roster or grade-related data.
+3. The extension stores snapshots in `chrome.storage.local`.
+4. D2L course rosters can be linked to one or more Canvas courses in the dashboard.
+5. The dashboard compares linked rosters and highlights missing or extra students.
+6. When changes are detected, the background service worker updates the badge count and can create a browser notification.
+
+## Privacy and Data Handling
+
+- The extension does not scrape anything until you manually visit a supported page.
+- Data is stored locally in the browser using `chrome.storage.local`.
+- When the dashboard is opened outside the extension context, mock data is stored in `localStorage` under `mock_chrome_storage`.
+- No external backend or third-party API is required for normal operation.
+
+## Project Structure
 
 ```text
+.
 ├── background/
-│   └── service-worker.js     # Background service worker handling extension lifecycle and messaging
+│   └── service-worker.js
 ├── content/
-│   ├── canvas_gradebook.js   # Content script injected into Canvas courses to parse/inject roster details
-│   ├── d2l_classlist.js     # Content script injected into D2L classlists/user list views to scrape rosters
-│   └── d2l_grade_copier.js   # Content script injected into D2L grade item editors to facilitate copying
+│   ├── canvas_gradebook.js
+│   ├── d2l_classlist.js
+│   └── d2l_grade_copier.js
 ├── dashboard/
-│   ├── dashboard.html        # Options page displaying roster status, discrepancies, and change logs
-│   ├── dashboard.css         # Responsive styles for the central dashboard panel
-│   └── dashboard.js          # Controller logic for dashboard metrics, data filtering, and rendering
-├── icons/                    # Action and extension icons (16px, 48px, 128px)
+│   ├── dashboard.css
+│   ├── dashboard.html
+│   └── dashboard.js
+├── icons/
+├── playground/
+│   ├── playground.css
+│   ├── playground.html
+│   ├── playground.js
+│   ├── run_headless_tests.js
+│   └── tests.js
 ├── popup/
-│   ├── popup.html            # Extension popup panel (browser action)
-│   ├── popup.css             # Action popup styles
-│   └── popup.js              # Controller logic for quick popup summaries
-├── playground/               # Sandbox testing suite for debugging layouts and core logic without extension reload
-│   ├── playground.html       # HTML sandbox UI
-│   ├── playground.css        # Styles for the playground page
-│   ├── playground.js         # Playground controller mimicking chrome.storage API using localStorage
-│   ├── run_headless_tests.js # Integration script for running headless tests
-│   └── tests.js              # Roster parser and sync unit/integration tests
-├── .gitignore                # Git ignore file (excludes OS/local logs)
-└── manifest.json             # Extension manifest specification (Manifest V3)
+│   ├── popup.css
+│   ├── popup.html
+│   └── popup.js
+├── manifest.json
+└── README.md
 ```
 
----
+## Local Development
 
-## Installation & Setup
+### Load the Extension in Chrome
 
-### Developer Installation
-To run this extension locally in your Chrome browser:
-1. Open Google Chrome.
-2. Navigate to `chrome://extensions/`.
-3. Toggle the **Developer mode** switch in the top-right corner.
-4. Click **Load unpacked** in the top-left corner.
-5. Select the `InstructorHelper` directory.
+1. Open `chrome://extensions/`.
+2. Enable Developer mode.
+3. Click Load unpacked.
+4. Select the `InstructorHelper` workspace folder.
 
-### Running the Development Playground
-For local layout validation and script testing without installing/reloading the extension:
-1. Start a local HTTP server in the workspace root directory:
-   ```bash
-   python3 -m http.server 8000
+### Use the Playground
+
+The playground lets you work on UI and data behavior without reloading the extension for every change.
+
+1. Start a local server from the project root:
+
+   ```powershell
+   python -m http.server 8000
    ```
-2. Open your browser and navigate to the playground:
+
+2. Open the playground:
+
    ```text
    http://localhost:8000/playground/playground.html
    ```
-3. Open the options/dashboard page:
+
+3. Open the dashboard directly in a normal browser tab if you want to test dashboard rendering with mocked storage:
+
    ```text
    http://localhost:8000/dashboard/dashboard.html
    ```
 
----
+## Testing Notes
 
-## Storage & API Interaction
+- `playground/tests.js` contains browser-driven tests for roster parsing and snapshot behavior.
+- `playground/run_headless_tests.js` is a headless test runner, but it currently uses a macOS Chrome path and will need adjustment before it runs on Windows.
 
-The extension stores rosters and discrepancies inside `chrome.storage.local`. When running outside of the Chrome Extension environment (e.g. inside the local HTTP server playground), the scripts automatically fallback to mock storage in `localStorage` under the key `mock_chrome_storage` so you can continue testing and iterating on layout and style changes natively.
+## Storage Model
+
+The extension initializes and uses local storage keys such as:
+
+- `courses`
+- `snapshots`
+- `changeLog`
+- `courseLinks`
+- `unreadCount`
+
+These keys support the popup summary, dashboard comparisons, and change-notification badge state.
+
+## Current Scope and Limitations
+
+- This is a Chrome extension built on Manifest V3.
+- Host permissions are currently limited to the domains listed in `manifest.json`.
+- The matching logic is optimized for instructor-assisted workflows, not unattended synchronization.
+- Grade copying is an assistive workflow inside supported D2L pages, not an automated cross-LMS submission pipeline.
+
+## Next Improvements Worth Considering
+
+- Make the supported LMS domains configurable.
+- Add a Windows-friendly headless test command.
+- Document the expected snapshot schema for contributors.
+- Add release or packaging instructions once distribution is needed.
