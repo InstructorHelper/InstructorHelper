@@ -1143,18 +1143,18 @@ function normalizeEmail(email) {
 // Find matched D2L student for a Canvas student by scanning linked D2L course snapshots
 function findD2LStudentForCanvas(canvasStu, canvasCourseId) {
   const canvasEmail = normalizeEmail(canvasStu.studentEmail);
-  const canvasName = canvasStu.studentName;
   
   for (const [d2lCourseId, canvasIds] of Object.entries(state.courseLinks || {})) {
     if (Array.isArray(canvasIds) && canvasIds.includes(canvasCourseId)) {
       const d2lStudents = state.snapshots[d2lCourseId] || [];
       const matched = d2lStudents.find(d2lStu => {
         const d2lEmail = normalizeEmail(d2lStu.email);
-        const d2lName = d2lStu.name;
+        // Use email-first matching: only match if both emails exist and match
         if (d2lEmail && canvasEmail) {
           return d2lEmail === canvasEmail;
         }
-        return nameMatch(d2lName, canvasName);
+        // If either email is missing, don't match (strict email-based matching)
+        return false;
       });
       if (matched) {
         return matched;
@@ -1172,19 +1172,16 @@ function compareRosters(d2lStudents, canvasStudents) {
   // For each D2L student, try to find a matching Canvas student
   d2lStudents.forEach(d2lStu => {
     const d2lEmail = normalizeEmail(d2lStu.email);
-    const d2lName = d2lStu.name;
     
     const matched = canvasStudents.find(canvasStu => {
       const canvasEmail = normalizeEmail(canvasStu.studentEmail);
-      const canvasName = canvasStu.studentName;
       
-      // Email match
+      // Use email-first matching: only match if both emails exist and match
       if (d2lEmail && canvasEmail) {
         return d2lEmail === canvasEmail;
       }
-      
-      // Name match
-      return nameMatch(d2lName, canvasName);
+      // If either email is missing, don't match (strict email-based matching)
+      return false;
     });
     
     if (!matched) {
@@ -1195,17 +1192,16 @@ function compareRosters(d2lStudents, canvasStudents) {
   // For each Canvas student, try to find a matching D2L student
   canvasStudents.forEach(canvasStu => {
     const canvasEmail = normalizeEmail(canvasStu.studentEmail);
-    const canvasName = canvasStu.studentName;
     
     const matched = d2lStudents.find(d2lStu => {
       const d2lEmail = normalizeEmail(d2lStu.email);
-      const d2lName = d2lStu.name;
       
+      // Use email-first matching: only match if both emails exist and match
       if (d2lEmail && canvasEmail) {
         return d2lEmail === canvasEmail;
       }
-      
-      return nameMatch(d2lName, canvasName);
+      // If either email is missing, don't match (strict email-based matching)
+      return false;
     });
     
     if (!matched) {
@@ -1223,19 +1219,19 @@ function compareRostersMultiple(d2lStudents, canvasCourseIds, snapshots, courses
 
   d2lStudents.forEach(d2lStu => {
     const d2lEmail = normalizeEmail(d2lStu.email);
-    const d2lName = d2lStu.name;
     const missingFromCourses = [];
 
     canvasCourseIds.forEach(canvasCourseId => {
       const canvasStudents = snapshots[canvasCourseId] || [];
       const matched = canvasStudents.find(canvasStu => {
         const canvasEmail = normalizeEmail(canvasStu.studentEmail);
-        const canvasName = canvasStu.studentName;
 
+        // Use email-first matching: only match if both emails exist and match
         if (d2lEmail && canvasEmail) {
           return d2lEmail === canvasEmail;
         }
-        return nameMatch(d2lName, canvasName);
+        // If either email is missing, don't match (strict email-based matching)
+        return false;
       });
 
       if (!matched) {
@@ -1258,16 +1254,16 @@ function compareRostersMultiple(d2lStudents, canvasCourseIds, snapshots, courses
 
     canvasStudents.forEach(canvasStu => {
       const canvasEmail = normalizeEmail(canvasStu.studentEmail);
-      const canvasName = canvasStu.studentName;
 
       const matched = d2lStudents.find(d2lStu => {
         const d2lEmail = normalizeEmail(d2lStu.email);
-        const d2lName = d2lStu.name;
 
+        // Use email-first matching: only match if both emails exist and match
         if (d2lEmail && canvasEmail) {
           return d2lEmail === canvasEmail;
         }
-        return nameMatch(d2lName, canvasName);
+        // If either email is missing, don't match (strict email-based matching)
+        return false;
       });
 
       if (!matched) {
