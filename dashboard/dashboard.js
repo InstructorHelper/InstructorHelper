@@ -146,9 +146,129 @@ async function loadAndRenderData() {
   
   // Render Logs
   renderLogs();
+  renderAttendancePage();
   
   // Update global status badge based on recent logs
   updateGlobalStatus();
+}
+
+function parseAttendanceCsv(text) {
+  const rows = [];
+  let row = [];
+  let value = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index];
+    if (char === '"') {
+      if (inQuotes && text[index + 1] === '"') {
+        value += '"';
+        index++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(value.trim());
+      value = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && text[index + 1] === '\n') index++;
+      row.push(value.trim());
+      if (row.some(cell => cell)) rows.push(row);
+      row = [];
+      value = '';
+    } else {
+      value += char;
+    }
+  }
+
+  row.push(value.trim());
+  if (row.some(cell => cell)) rows.push(row);
+  if (rows.length < 2) return [];
+
+  const headers = rows[0].map(header => header.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim());
+  return rows.slice(1).map(cells => {
+    const record = {};
+    headers.forEach((header, index) => { record[header] = cells[index] || ''; });
+    return record;
+  });
+}
+
+function attendanceRecordMatchesStudent(record, student) {
+  const email = (record.email || '').toLowerCase();
+  const studentEmail = (student.email || '').toLowerCase();
+  if (email && studentEmail && email === studentEmail) return true;
+
+  const submissionUsername = email.split('@')[0];
+  const studentUsername = (student.username || student.email || '').split('@')[0].toLowerCase();
+  return !!submissionUsername && !!studentUsername && submissionUsername === studentUsername;
+}
+
+function renderAttendancePage() {
+  const select = document.getElementById('attendance-course-select');
+  if (!select) return;
+
+  const d2lCourses = Object.values(state.courses).filter(course => course.type === 'd2l-classlist');
+  const previousValue = select.value;
+  select.innerHTML = d2lCourses.length
+    ? d2lCourses.map(course => `<option value="${course.id}">${course.name}</option>`).join('')
+    : '<option value="">No monitored D2L courses</option>';
+  if (d2lCourses.some(course => course.id === previousValue)) select.value = previousValue;
+
+  const parseButton = document.getElementById('attendance-parse');
+  const clearButton = document.getElementById('attendance-clear');
+  const copyButton = document.getElementById('attendance-copy-output');
+  const input = document.getElementById('attendance-csv-input');
+  if (parseButton.dataset.wired === 'true') return;
+  parseButton.dataset.wired = 'true';
+
+  const output = { headers: [], rows: [] };
+  const renderOutput = () => {
+    const count = output.rows.length;
+    document.getElementById('attendance-submission-count').textContent = count;
+    document.getElementById('attendance-present-count').textContent = output.rows.filter(row => row[1] === 'P').length;
+    document.getElementById('attendance-absent-count').textContent = output.rows.filter(row => row[1] === 'A').length;
+    copyButton.disabled = count === 0;
+    document.getElementById('attendance-output-meta').textContent = count ? `${count} roster rows ready for direct LMS paste` : 'Ordered 1:1 for direct LMS paste';
+    document.getElementById('attendance-output-container').innerHTML = count ? `
+      <table class="attendance-output-table"><thead><tr>${output.headers.map(header => `<th>${header}</th>`).join('')}</tr></thead>
+      <tbody>${output.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    ` : '<div class="empty-state"><p>No attendance data yet.</p><span class="instruction">Paste CSV data above to build the roster-aligned output.</span></div>';
+  };
+
+  parseButton.addEventListener('click', () => {
+    const records = parseAttendanceCsv(input.value);
+    const course = state.courses[select.value];
+    const roster = (state.snapshots[select.value] || []).filter(student => student.status !== 'removed');
+    const matched = new Set();
+    output.headers = ['Email', 'P / A', 'Name', 'Submission time', 'Class response'];
+    output.rows = roster.map(student => {
+      const record = records.find((candidate, index) => !matched.has(index) && attendanceRecordMatchesStudent(candidate, student));
+      if (record) matched.add(records.indexOf(record));
+      const isPresent = !!record;
+      return [student.email || student.username || '', isPresent ? 'P' : 'A', student.name || '', record?.['completion time'] || record?.['start time'] || '', record?.['what is the class number provided by your instructor'] || ''];
+    });
+    const unmatched = records.filter((_, index) => !matched.has(index)).length;
+    const matchedCount = records.length - unmatched;
+    document.getElementById('attendance-input-status').textContent = `${records.length} CSV rows loaded`;
+    document.getElementById('attendance-match-status').textContent = course ? `${matchedCount} of ${records.length} submissions matched. ${unmatched} submission${unmatched === 1 ? '' : 's'} could not be matched.` : 'Choose a monitored D2L course first.';
+    renderOutput();
+  });
+
+  clearButton.addEventListener('click', () => {
+    input.value = '';
+    output.headers = [];
+    output.rows = [];
+    document.getElementById('attendance-input-status').textContent = 'No data loaded';
+    document.getElementById('attendance-match-status').textContent = 'Choose a D2L course and parse your CSV.';
+    renderOutput();
+  });
+
+  copyButton.addEventListener('click', async () => {
+    const tsv = [output.headers, ...output.rows].map(row => row.join('\t')).join('\n');
+    await navigator.clipboard.writeText(tsv);
+    copyButton.textContent = 'Copied output';
+    setTimeout(() => { copyButton.textContent = 'Copy output'; }, 1800);
+  });
 }
 
 // Update status badge based on recent logs

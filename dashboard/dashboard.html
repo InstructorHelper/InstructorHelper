@@ -21,6 +21,7 @@
       <!-- Top Navigation Tabs -->
       <nav class="nav-tabs">
         <button class="tab-link active" data-tab="tab-monitor">Course Monitor</button>
+        <button class="tab-link" data-tab="tab-attendance">Attendance</button>
         <button class="tab-link" data-tab="tab-logs">Change Log History</button>
       </nav>
       
@@ -82,7 +83,65 @@
         </div>
       </section>
 
-      <!-- Tab 2: Change Log History -->
+      <!-- Tab 2: Attendance -->
+      <section id="tab-attendance" class="tab-content">
+        <div class="attendance-layout" id="attendance-page">
+          <div class="attendance-header">
+            <div>
+              <h2>Attendance Workspace</h2>
+              <p>Paste the CSV copied from your attendance form, match it to a monitored D2L roster, and copy the result.</p>
+            </div>
+            <label class="attendance-course-picker" for="attendance-course-select">
+              <span>D2L course</span>
+              <select id="attendance-course-select" class="form-select"></select>
+            </label>
+          </div>
+
+          <div class="attendance-input-grid">
+            <section class="attendance-panel">
+              <div class="attendance-panel-heading">
+                <div>
+                  <span class="step-label">01</span>
+                  <h3>Paste CSV data</h3>
+                </div>
+                <span class="attendance-file-status" id="attendance-input-status">No data loaded</span>
+              </div>
+              <textarea id="attendance-csv-input" class="attendance-csv-input" placeholder="Paste the copied CSV here...\nId,Start time,Completion time,Email,Name,..."></textarea>
+              <div class="attendance-actions">
+                <button class="btn btn-primary" id="attendance-parse">Parse submissions</button>
+                <button class="btn btn-secondary" id="attendance-clear">Clear</button>
+              </div>
+            </section>
+
+            <section class="attendance-panel attendance-summary-panel">
+              <span class="step-label">02</span>
+              <h3>Reconciliation summary</h3>
+              <div class="attendance-stat-grid">
+                <div><strong id="attendance-submission-count">0</strong><span>Submissions</span></div>
+                <div><strong id="attendance-present-count">0</strong><span>Present</span></div>
+                <div><strong id="attendance-absent-count">0</strong><span>Absent</span></div>
+              </div>
+              <p class="attendance-hint" id="attendance-match-status">Choose a D2L course and parse your CSV.</p>
+            </section>
+          </div>
+
+          <section class="attendance-output-panel">
+            <div class="attendance-output-heading">
+              <div>
+                <span class="step-label">03</span>
+                <h3>Attendance output</h3>
+                <p id="attendance-output-meta">Ordered 1:1 for direct LMS paste</p>
+              </div>
+              <button class="btn btn-primary" id="attendance-copy-output" disabled>Copy output</button>
+            </div>
+            <div class="attendance-table-wrap" id="attendance-output-container">
+              <div class="empty-state"><p>No attendance data yet.</p><span class="instruction">Paste CSV data above to build the roster-aligned output.</span></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Tab 3: Change Log History -->
       <section id="tab-logs" class="tab-content">
         <div class="logs-layout">
           <div class="logs-header-row">
