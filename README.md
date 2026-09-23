@@ -7,6 +7,7 @@ The extension is intentionally local-first: it only works when the instructor is
 ## What It Does
 
 - Scrapes roster data from D2L Brightspace classlist and grade-related views.
+- Adds a copy-to-TSV control to Brightspace attendance pages.
 - Scrapes student roster data from supported Canvas course gradebook pages.
 - Compares D2L and Canvas rosters to surface mismatches.
 - Tracks roster changes over time and raises badge or notification alerts.
@@ -20,6 +21,7 @@ The current manifest is scoped to specific LMS hosts and page patterns:
 - Brightspace classlist pages on `learn.rrc.ca`
 - Brightspace grade item edit pages on `learn.rrc.ca`
 - Brightspace user list view pages on `learn.rrc.ca`
+- Brightspace attendance pages on `learn.rrc.ca`
 - Canvas gradebook and grades pages on `awsacademy.instructure.com`
 
 If you need this extension to work against a different Brightspace or Canvas domain, update the match patterns in `manifest.json` before loading the extension.

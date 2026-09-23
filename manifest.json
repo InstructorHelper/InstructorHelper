@@ -9,6 +9,7 @@
   ],
   "host_permissions": [
     "*://learn.rrc.ca/d2l/lms/classlist/classlist.d2l*",
+    "*://learn.rrc.ca/d2l/lms/attendance/*",
     "*://learn.rrc.ca/d2l/lms/grades/admin/enter/grade_item_edit.d2l*",
     "*://learn.rrc.ca/d2l/lms/grades/admin/enter/user_list_view.d2l*",
     "*://awsacademy.instructure.com/courses/*/gradebook*",
@@ -29,6 +30,12 @@
         "*://learn.rrc.ca/d2l/lms/grades/admin/enter/user_list_view.d2l*"
       ],
       "js": ["content/d2l_classlist.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": ["*://learn.rrc.ca/d2l/lms/attendance/*"],
+      "js": ["content/d2l_attendance.js"],
       "run_at": "document_idle",
       "all_frames": true
     },

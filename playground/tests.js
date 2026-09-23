@@ -23,6 +23,29 @@
         document.body.appendChild(script);
       });
     }
+    if (!window.__d2l_attendance_test_exports) {
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = '../content/d2l_attendance.js';
+        script.onload = resolve;
+        document.body.appendChild(script);
+      });
+    }
+  }
+
+  function testAttendanceTableExport() {
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead><tr><th>Student</th><th>Date</th><th>Status</th></tr></thead>
+      <tbody><tr><td>Zuhur Ali</td><td>2026-09-22</td><td>Present</td></tr>
+      <tr><td>Kole Blanchette</td><td>2026-09-22</td><td>Absent</td></tr></tbody>`;
+    const exports = window.__d2l_attendance_test_exports;
+    const parsed = exports.getAttendanceRows(table);
+    assert(parsed.headers.join('|') === 'Student|Date|Status', 'Attendance headers were not parsed');
+    assert(parsed.rows.length === 2, 'Attendance row count was not parsed');
+    const tsv = exports.attendanceRowsToTsv(parsed.headers, parsed.rows);
+    assert(tsv.includes('Zuhur Ali\t2026-09-22\tPresent'), 'Present row was not exported as TSV');
+    assert(tsv.includes('Kole Blanchette\t2026-09-22\tAbsent'), 'Absent row was not exported as TSV');
   }
 
   function testParseD2LLearnerCell() {
@@ -373,7 +396,7 @@
 
     try {
       await ensureScriptsLoaded();
-      
+      await runTest("D2L Attendance table TSV export", testAttendanceTableExport);
       await runTest("D2L Cell ID/Name Parser (parseD2LLearnerCell)", testParseD2LLearnerCell);
       await runTest("Smart Name Match Logic (smartNameMatch)", testSmartNameMatch);
       await runTest("Token-based D2L Name Matching (namesMatch)", testNamesMatch);
