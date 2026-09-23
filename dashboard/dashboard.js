@@ -276,6 +276,10 @@ function attendanceMemberKey(student) {
   );
 }
 
+function isIncludedInAttendanceRoster(student) {
+  return student.status !== "removed" || !student.removalConfirmed;
+}
+
 function isAttendanceTracked(courseId, student) {
   const tracked = state.attendanceTracking[courseId];
   const memberKey = attendanceMemberKey(student);
@@ -330,9 +334,7 @@ function renderAttendanceRoster(courseId, sortKey) {
   if (!container || !meta) return;
 
   const roster = deduplicateAttendanceRoster(
-    (state.snapshots[courseId] || []).filter(
-      (student) => student.status !== "removed",
-    ),
+    (state.snapshots[courseId] || []).filter(isIncludedInAttendanceRoster),
   );
   const sortedRoster = [...roster].sort((left, right) => {
     const leftValue =
@@ -449,7 +451,7 @@ function renderAttendancePage() {
     const roster = deduplicateAttendanceRoster(
       (state.snapshots[select.value] || []).filter((student) => {
         return (
-          student.status !== "removed" &&
+          isIncludedInAttendanceRoster(student) &&
           isAttendanceTracked(select.value, student)
         );
       }),

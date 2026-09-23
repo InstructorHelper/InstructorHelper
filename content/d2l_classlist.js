@@ -27,44 +27,42 @@ function namesMatch(name1, name2) {
       .filter((t) => t.length > 1); // ignore single-letter middle initials
   };
 
-  function studentDataCompleteness(student) {
-    return [
-      student.orgId,
-      student.username,
-      student.name,
-      student.email,
-      student.role,
-    ].filter(Boolean).length;
-  }
-
-  function deduplicateStudentsByOrgId(students) {
-    const uniqueStudents = new Map();
-    for (const student of students) {
-      const key =
-        student.orgId || student.id || student.username || student.email;
-      const existing = uniqueStudents.get(key);
-      if (
-        !existing ||
-        studentDataCompleteness(student) > studentDataCompleteness(existing)
-      ) {
-        uniqueStudents.set(key, student);
-      }
-    }
-    return [...uniqueStudents.values()];
-  }
   const tokens1 = getTokens(n1).sort();
   const tokens2 = getTokens(n2).sort();
 
   if (tokens1.length === 0 || tokens2.length === 0) return false;
-  (namesMatch, deduplicateStudentsByOrgId);
   const overlap = tokens1.filter((t) => tokens2.includes(t));
   const minLength = Math.min(tokens1.length, tokens2.length);
 
-  if (minLength <= 2) {
-    return overlap.length === minLength;
-  } else {
-    return overlap.length >= 2 && overlap.length >= Math.ceil(minLength * 0.66);
+  // Every token of the shorter name must appear in the longer name; a partial
+  // overlap (e.g. sharing only a common surname) must not count as a match.
+  return overlap.length === minLength;
+}
+
+function studentDataCompleteness(student) {
+  return [
+    student.orgId,
+    student.username,
+    student.name,
+    student.email,
+    student.role,
+  ].filter(Boolean).length;
+}
+
+function deduplicateStudentsByOrgId(students) {
+  const uniqueStudents = new Map();
+  for (const student of students) {
+    const key =
+      student.orgId || student.id || student.username || student.email;
+    const existing = uniqueStudents.get(key);
+    if (
+      !existing ||
+      studentDataCompleteness(student) > studentDataCompleteness(existing)
+    ) {
+      uniqueStudents.set(key, student);
+    }
   }
+  return [...uniqueStudents.values()];
 }
 
 // Expose for testing
@@ -833,8 +831,10 @@ async function processClasslistChanges(courseId, courseName, currentStudents) {
         }
       } else {
         // Grades lists can be filtered or paginated; only a full classlist scan proves removal.
-        if (!isFullClasslistScan || prev.status === "removed") {
+        if (!isFullClasslistScan) {
           newSnapshot.push(prev);
+        } else if (prev.status === "removed") {
+          newSnapshot.push({ ...prev, removalConfirmed: true });
         } else {
           const removedStudent = {
             id: prev.id,
@@ -844,6 +844,7 @@ async function processClasslistChanges(courseId, courseName, currentStudents) {
             email: prev.email,
             role: prev.role,
             status: "removed",
+            removalConfirmed: true,
             timestamp: timestamp,
           };
           newSnapshot.push(removedStudent);
@@ -893,7 +894,9 @@ async function processClasslistChanges(courseId, courseName, currentStudents) {
   }
 
   // Update courses list metadata (itemCount counts active students only)
-  const activeCount = newSnapshot.filter((s) => s.status !== "removed").length;
+  const activeCount = newSnapshot.filter(
+    (student) => student.status !== "removed" || !student.removalConfirmed,
+  ).length;
   courses[courseId] = {
     id: courseId,
     name: courseName,
