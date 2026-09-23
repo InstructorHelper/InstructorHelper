@@ -1,19 +1,19 @@
 // LMS Monitor Dashboard Controller Script
 
 // Mock chrome extension API if running in a standalone web browser context
-if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
   const mockStorage = {
-    _getRaw: function() {
+    _getRaw: function () {
       try {
-        return JSON.parse(localStorage.getItem('mock_chrome_storage') || '{}');
+        return JSON.parse(localStorage.getItem("mock_chrome_storage") || "{}");
       } catch (e) {
         return {};
       }
     },
-    _setRaw: function(data) {
-      localStorage.setItem('mock_chrome_storage', JSON.stringify(data));
+    _setRaw: function (data) {
+      localStorage.setItem("mock_chrome_storage", JSON.stringify(data));
     },
-    get: async function(keys) {
+    get: async function (keys) {
       const data = this._getRaw();
       if (keys === null) {
         return { ...data };
@@ -22,43 +22,50 @@ if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
       let keysArr = [];
       if (Array.isArray(keys)) {
         keysArr = keys;
-      } else if (typeof keys === 'string') {
+      } else if (typeof keys === "string") {
         keysArr = [keys];
-      } else if (typeof keys === 'object') {
+      } else if (typeof keys === "object") {
         keysArr = Object.keys(keys);
       }
-      keysArr.forEach(k => {
-        result[k] = data[k] !== undefined ? data[k] : (typeof keys === 'object' ? keys[k] : undefined);
+      keysArr.forEach((k) => {
+        result[k] =
+          data[k] !== undefined
+            ? data[k]
+            : typeof keys === "object"
+              ? keys[k]
+              : undefined;
       });
       return result;
     },
-    set: async function(items) {
+    set: async function (items) {
       const data = this._getRaw();
       Object.assign(data, items);
       this._setRaw(data);
       return {};
     },
-    clear: async function() {
+    clear: async function () {
       this._setRaw({});
       return {};
-    }
+    },
   };
-  
+
   window.chrome = {
     storage: {
       local: mockStorage,
       onChanged: {
-        addListener: () => {}
-      }
+        addListener: () => {},
+      },
     },
     action: {
-      setBadgeText: () => {}
+      setBadgeText: () => {},
     },
     runtime: {
-      sendMessage: () => {}
-    }
+      sendMessage: () => {},
+    },
   };
-  console.log("Dashboard: Local mock of chrome.storage (with localStorage persistence) and chrome.runtime initialized.");
+  console.log(
+    "Dashboard: Local mock of chrome.storage (with localStorage persistence) and chrome.runtime initialized.",
+  );
 }
 
 let state = {
@@ -66,16 +73,17 @@ let state = {
   courses: {},
   snapshots: {},
   changeLog: [],
-  courseLinks: {}
+  courseLinks: {},
+  attendanceTracking: {},
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Clear the extension badge count when the dashboard is opened
   await clearUnreadBadge();
 
   // Initialize navigation tabs
   setupTabs();
-  
+
   // Load and render all data
   await loadAndRenderData();
 
@@ -84,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Listen to storage changes for real-time dashboard updates
   chrome.storage.onChanged.addListener(async (changes, namespace) => {
-    if (namespace === 'local') {
+    if (namespace === "local") {
       await loadAndRenderData();
     }
   });
@@ -94,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function clearUnreadBadge() {
   try {
     await chrome.storage.local.set({ unreadCount: 0 });
-    await chrome.action.setBadgeText({ text: '' });
+    await chrome.action.setBadgeText({ text: "" });
   } catch (err) {
     console.error("Error updating badge:", err);
   }
@@ -102,52 +110,62 @@ async function clearUnreadBadge() {
 
 // Navigation tabs control
 function setupTabs() {
-  const tabs = document.querySelectorAll('.tab-link');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
+  const tabs = document.querySelectorAll(".tab-link");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
       // Deactivate all tabs and contents
-      tabs.forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
+      tabs.forEach((t) => t.classList.remove("active"));
+      document
+        .querySelectorAll(".tab-content")
+        .forEach((c) => c.classList.remove("active"));
+
       // Activate selected tab
-      tab.classList.add('active');
-      const contentId = tab.getAttribute('data-tab');
-      document.getElementById(contentId).classList.add('active');
+      tab.classList.add("active");
+      const contentId = tab.getAttribute("data-tab");
+      document.getElementById(contentId).classList.add("active");
     });
   });
 }
 
 // Load and Render Courses & Logs
 async function loadAndRenderData() {
-  const data = await chrome.storage.local.get(['courses', 'snapshots', 'changeLog', 'courseLinks', 'dismissCanvasGradebookAlert']);
+  const data = await chrome.storage.local.get([
+    "courses",
+    "snapshots",
+    "changeLog",
+    "courseLinks",
+    "attendanceTracking",
+    "dismissCanvasGradebookAlert",
+  ]);
   state.courses = data.courses || {};
   state.snapshots = data.snapshots || {};
   state.changeLog = data.changeLog || [];
   state.courseLinks = data.courseLinks || {};
+  state.attendanceTracking = data.attendanceTracking || {};
   state.dismissCanvasGradebookAlert = !!data.dismissCanvasGradebookAlert;
-  
+
   // Normalize course links for backward compatibility (string -> string array)
   const linksUpdated = normalizeCourseLinks(state.courseLinks);
   if (linksUpdated) {
     await chrome.storage.local.set({ courseLinks: state.courseLinks });
   }
-  
+
   const courseList = Object.values(state.courses);
-  
+
   // Update counts
-  document.getElementById('courses-count').textContent = courseList.length;
-  document.getElementById('logs-count').textContent = state.changeLog.length;
-  
+  document.getElementById("courses-count").textContent = courseList.length;
+  document.getElementById("logs-count").textContent = state.changeLog.length;
+
   // Render Sidebar Monitored Courses
   renderSidebarCourses(courseList);
-  
+
   // Render Detailed Panel (Selected Course)
   renderDetailedPanel();
-  
+
   // Render Logs
   renderLogs();
   renderAttendancePage();
-  
+
   // Update global status badge based on recent logs
   updateGlobalStatus();
 }
@@ -155,8 +173,10 @@ async function loadAndRenderData() {
 function parseAttendanceCsv(text) {
   const rows = [];
   let row = [];
-  let value = '';
+  let value = "";
   let inQuotes = false;
+  const firstLine = text.split(/\r?\n/, 1)[0] || "";
+  const delimiter = firstLine.includes("\t") ? "\t" : ",";
 
   for (let index = 0; index < text.length; index++) {
     const char = text[index];
@@ -167,117 +187,342 @@ function parseAttendanceCsv(text) {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === delimiter && !inQuotes) {
       row.push(value.trim());
-      value = '';
-    } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && text[index + 1] === '\n') index++;
+      value = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && text[index + 1] === "\n") index++;
       row.push(value.trim());
-      if (row.some(cell => cell)) rows.push(row);
+      if (row.some((cell) => cell)) rows.push(row);
       row = [];
-      value = '';
+      value = "";
     } else {
       value += char;
     }
   }
 
   row.push(value.trim());
-  if (row.some(cell => cell)) rows.push(row);
+  if (row.some((cell) => cell)) rows.push(row);
+  if (!rows.length) return [];
+
+  const headers = rows[0].map((header) =>
+    header
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim(),
+  );
+  const hasEmailHeader = headers.includes("email");
+  if (!hasEmailHeader && delimiter === "\t") {
+    return rows
+      .filter((cells) => cells.some((cell) => cell))
+      .map((cells) => ({
+        id: cells[0] || "",
+        "start time": cells[1] || "",
+        "completion time": cells[2] || "",
+        email: cells[3] || "",
+        name: cells[4] || "",
+        course: cells[5] || "",
+        "what is the class number provided by your instructor": cells[6] || "",
+        response: cells[7] || "",
+        comments: cells[8] || "",
+      }));
+  }
   if (rows.length < 2) return [];
 
-  const headers = rows[0].map(header => header.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim());
-  return rows.slice(1).map(cells => {
+  return rows.slice(1).map((cells) => {
     const record = {};
-    headers.forEach((header, index) => { record[header] = cells[index] || ''; });
+    headers.forEach((header, index) => {
+      record[header] = cells[index] || "";
+    });
     return record;
   });
 }
 
 function attendanceRecordMatchesStudent(record, student) {
-  const email = (record.email || '').toLowerCase();
-  const studentEmail = (student.email || '').toLowerCase();
+  const email = (record.email || "").toLowerCase();
+  const studentEmail = (student.email || "").toLowerCase();
   if (email && studentEmail && email === studentEmail) return true;
 
-  const submissionUsername = email.split('@')[0];
-  const studentUsername = (student.username || student.email || '').split('@')[0].toLowerCase();
-  return !!submissionUsername && !!studentUsername && submissionUsername === studentUsername;
+  const submissionUsername = email.split("@")[0];
+  const studentEmailUsername = studentEmail.split("@")[0];
+  const studentUsername = (student.username || "").split("@")[0].toLowerCase();
+  return (
+    !!submissionUsername &&
+    [studentEmailUsername, studentUsername]
+      .filter(Boolean)
+      .includes(submissionUsername)
+  );
+}
+
+function deduplicateAttendanceRecords(records) {
+  const submissionKeys = new Set();
+  return records.filter((record) => {
+    const email = (record.email || "").trim().toLowerCase();
+    const submissionKey = email.split("@")[0];
+    if (!submissionKey || submissionKeys.has(submissionKey))
+      return !submissionKey;
+    submissionKeys.add(submissionKey);
+    return true;
+  });
+}
+
+function attendanceMemberKey(student) {
+  return (
+    student.orgId ||
+    student.id ||
+    student.username ||
+    student.email ||
+    student.name
+  );
+}
+
+function isAttendanceTracked(courseId, student) {
+  const tracked = state.attendanceTracking[courseId];
+  const memberKey = attendanceMemberKey(student);
+  if (tracked && Object.hasOwn(tracked, memberKey)) return tracked[memberKey];
+  return /^student$/i.test(student.role || "Student");
+}
+
+function attendanceNameParts(name) {
+  const parts = (name || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length > 1)
+    return { lastName: parts[0], firstName: parts.slice(1).join(" ") };
+  const words = (name || "").trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: words[0] || "",
+    lastName: words.slice(1).join(" ") || words[0] || "",
+  };
+}
+
+function deduplicateAttendanceRoster(students) {
+  const membersById = new Map();
+  for (const student of students) {
+    const key = student.orgId || attendanceMemberKey(student);
+    const existing = membersById.get(key);
+    const studentCompleteness = [
+      student.orgId,
+      student.username,
+      student.name,
+      student.email,
+      student.role,
+    ].filter(Boolean).length;
+    const existingCompleteness = existing
+      ? [
+          existing.orgId,
+          existing.username,
+          existing.name,
+          existing.email,
+          existing.role,
+        ].filter(Boolean).length
+      : -1;
+    if (!existing || studentCompleteness > existingCompleteness)
+      membersById.set(key, student);
+  }
+  return [...membersById.values()];
+}
+
+function renderAttendanceRoster(courseId, sortKey) {
+  const container = document.getElementById("attendance-roster-container");
+  const meta = document.getElementById("attendance-roster-meta");
+  if (!container || !meta) return;
+
+  const roster = deduplicateAttendanceRoster(
+    (state.snapshots[courseId] || []).filter(
+      (student) => student.status !== "removed",
+    ),
+  );
+  const sortedRoster = [...roster].sort((left, right) => {
+    const leftValue =
+      sortKey === "lastName" || sortKey === "firstName"
+        ? attendanceNameParts(left.name)[sortKey]
+        : left[sortKey] || "";
+    const rightValue =
+      sortKey === "lastName" || sortKey === "firstName"
+        ? attendanceNameParts(right.name)[sortKey]
+        : right[sortKey] || "";
+    return String(leftValue).localeCompare(String(rightValue), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+  const trackedCount = roster.filter((student) =>
+    isAttendanceTracked(courseId, student),
+  ).length;
+  meta.textContent = roster.length
+    ? `${trackedCount} of ${roster.length} active members will be included in attendance output.`
+    : "Choose a monitored D2L course to view its members.";
+
+  container.innerHTML = roster.length
+    ? `
+    <table class="attendance-output-table attendance-roster-table">
+      <thead><tr><th>Track</th><th>Org ID</th><th>Last name</th><th>First name</th><th>Email</th><th>Role</th></tr></thead>
+      <tbody>${sortedRoster
+        .map((student) => {
+          const name = attendanceNameParts(student.name);
+          const memberKey = encodeURIComponent(attendanceMemberKey(student));
+          return `<tr><td><input type="checkbox" data-attendance-member="${memberKey}" ${isAttendanceTracked(courseId, student) ? "checked" : ""}></td><td>${student.orgId || ""}</td><td>${name.lastName}</td><td>${name.firstName}</td><td>${student.email || ""}</td><td>${student.role || ""}</td></tr>`;
+        })
+        .join("")}</tbody>
+    </table>`
+    : '<div class="empty-state"><p>No active class members.</p><span class="instruction">Monitor the D2L classlist to load its roster.</span></div>';
+
+  container.querySelectorAll("[data-attendance-member]").forEach((checkbox) => {
+    checkbox.addEventListener("change", async () => {
+      const memberKey = decodeURIComponent(checkbox.dataset.attendanceMember);
+      const courseTracking = {
+        ...(state.attendanceTracking[courseId] || {}),
+        [memberKey]: checkbox.checked,
+      };
+      state.attendanceTracking = {
+        ...state.attendanceTracking,
+        [courseId]: courseTracking,
+      };
+      await chrome.storage.local.set({
+        attendanceTracking: state.attendanceTracking,
+      });
+      renderAttendanceRoster(courseId, sortKey);
+      const input = document.getElementById("attendance-csv-input");
+      if (input?.value.trim())
+        document.getElementById("attendance-parse")?.click();
+    });
+  });
 }
 
 function renderAttendancePage() {
-  const select = document.getElementById('attendance-course-select');
+  const select = document.getElementById("attendance-course-select");
   if (!select) return;
 
-  const d2lCourses = Object.values(state.courses).filter(course => course.type === 'd2l-classlist');
+  const d2lCourses = Object.values(state.courses).filter(
+    (course) => course.type === "d2l-classlist",
+  );
   const previousValue = select.value;
   select.innerHTML = d2lCourses.length
-    ? d2lCourses.map(course => `<option value="${course.id}">${course.name}</option>`).join('')
+    ? d2lCourses
+        .map((course) => `<option value="${course.id}">${course.name}</option>`)
+        .join("")
     : '<option value="">No monitored D2L courses</option>';
-  if (d2lCourses.some(course => course.id === previousValue)) select.value = previousValue;
+  if (d2lCourses.some((course) => course.id === previousValue))
+    select.value = previousValue;
 
-  const parseButton = document.getElementById('attendance-parse');
-  const clearButton = document.getElementById('attendance-clear');
-  const copyButton = document.getElementById('attendance-copy-output');
-  const input = document.getElementById('attendance-csv-input');
-  if (parseButton.dataset.wired === 'true') return;
-  parseButton.dataset.wired = 'true';
+  const parseButton = document.getElementById("attendance-parse");
+  const clearButton = document.getElementById("attendance-clear");
+  const copyButton = document.getElementById("attendance-copy-output");
+  const input = document.getElementById("attendance-csv-input");
+  const sortSelect = document.getElementById("attendance-roster-sort");
+  const updateRoster = () =>
+    renderAttendanceRoster(select.value, sortSelect.value);
+  updateRoster();
+  if (parseButton.dataset.wired === "true") return;
+  parseButton.dataset.wired = "true";
+  select.addEventListener("change", updateRoster);
+  sortSelect.addEventListener("change", updateRoster);
 
-  const output = { headers: [], rows: [] };
+  const output = { headers: [], rows: [], submissionCount: 0 };
   const renderOutput = () => {
     const count = output.rows.length;
-    document.getElementById('attendance-submission-count').textContent = count;
-    document.getElementById('attendance-present-count').textContent = output.rows.filter(row => row[1] === 'P').length;
-    document.getElementById('attendance-absent-count').textContent = output.rows.filter(row => row[1] === 'A').length;
+    document.getElementById("attendance-submission-count").textContent =
+      output.submissionCount;
+    document.getElementById("attendance-present-count").textContent =
+      output.rows.filter((row) => row[1] === "P").length;
+    document.getElementById("attendance-absent-count").textContent =
+      output.rows.filter((row) => row[1] === "A").length;
     copyButton.disabled = count === 0;
-    document.getElementById('attendance-output-meta').textContent = count ? `${count} roster rows ready for direct LMS paste` : 'Ordered 1:1 for direct LMS paste';
-    document.getElementById('attendance-output-container').innerHTML = count ? `
-      <table class="attendance-output-table"><thead><tr>${output.headers.map(header => `<th>${header}</th>`).join('')}</tr></thead>
-      <tbody>${output.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table>
-    ` : '<div class="empty-state"><p>No attendance data yet.</p><span class="instruction">Paste CSV data above to build the roster-aligned output.</span></div>';
+    document.getElementById("attendance-output-meta").textContent = count
+      ? `${count} roster rows ready for direct LMS paste`
+      : "Ordered 1:1 for direct LMS paste";
+    document.getElementById("attendance-output-container").innerHTML = count
+      ? `
+      <table class="attendance-output-table"><thead><tr>${output.headers.map((header) => `<th>${header}</th>`).join("")}</tr></thead>
+      <tbody>${output.rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    `
+      : '<div class="empty-state"><p>No attendance data yet.</p><span class="instruction">Paste CSV data above to build the roster-aligned output.</span></div>';
   };
 
-  parseButton.addEventListener('click', () => {
-    const records = parseAttendanceCsv(input.value);
+  parseButton.addEventListener("click", () => {
+    const parsedRecords = parseAttendanceCsv(input.value);
+    const records = deduplicateAttendanceRecords(parsedRecords);
+    const duplicateCount = parsedRecords.length - records.length;
     const course = state.courses[select.value];
-    const roster = (state.snapshots[select.value] || []).filter(student => student.status !== 'removed');
+    const roster = deduplicateAttendanceRoster(
+      (state.snapshots[select.value] || []).filter((student) => {
+        return (
+          student.status !== "removed" &&
+          isAttendanceTracked(select.value, student)
+        );
+      }),
+    );
     const matched = new Set();
-    output.headers = ['Email', 'P / A', 'Name', 'Submission time', 'Class response'];
-    output.rows = roster.map(student => {
-      const record = records.find((candidate, index) => !matched.has(index) && attendanceRecordMatchesStudent(candidate, student));
+    output.headers = [
+      "Email",
+      "P / A",
+      "Name",
+      "Submission time",
+      "Class response",
+    ];
+    output.rows = roster.map((student) => {
+      const record = records.find(
+        (candidate, index) =>
+          !matched.has(index) &&
+          attendanceRecordMatchesStudent(candidate, student),
+      );
       if (record) matched.add(records.indexOf(record));
       const isPresent = !!record;
-      return [student.email || student.username || '', isPresent ? 'P' : 'A', student.name || '', record?.['completion time'] || record?.['start time'] || '', record?.['what is the class number provided by your instructor'] || ''];
+      return [
+        student.email || student.username || "",
+        isPresent ? "P" : "A",
+        student.name || "",
+        record?.["completion time"] || record?.["start time"] || "",
+        record?.["what is the class number provided by your instructor"] || "",
+      ];
     });
     const unmatched = records.filter((_, index) => !matched.has(index)).length;
     const matchedCount = records.length - unmatched;
-    document.getElementById('attendance-input-status').textContent = `${records.length} CSV rows loaded`;
-    document.getElementById('attendance-match-status').textContent = course ? `${matchedCount} of ${records.length} submissions matched. ${unmatched} submission${unmatched === 1 ? '' : 's'} could not be matched.` : 'Choose a monitored D2L course first.';
+    output.submissionCount = records.length;
+    document.getElementById("attendance-input-status").textContent =
+      duplicateCount
+        ? `${records.length} unique CSV rows loaded; ${duplicateCount} duplicate submission${duplicateCount === 1 ? "" : "s"} ignored`
+        : `${records.length} CSV rows loaded`;
+    document.getElementById("attendance-match-status").textContent = course
+      ? `${matchedCount} of ${records.length} unique submissions matched. ${unmatched} submission${unmatched === 1 ? "" : "s"} could not be matched.`
+      : "Choose a monitored D2L course first.";
     renderOutput();
   });
 
-  clearButton.addEventListener('click', () => {
-    input.value = '';
+  clearButton.addEventListener("click", () => {
+    input.value = "";
     output.headers = [];
     output.rows = [];
-    document.getElementById('attendance-input-status').textContent = 'No data loaded';
-    document.getElementById('attendance-match-status').textContent = 'Choose a D2L course and parse your CSV.';
+    output.submissionCount = 0;
+    document.getElementById("attendance-input-status").textContent =
+      "No data loaded";
+    document.getElementById("attendance-match-status").textContent =
+      "Choose a D2L course and parse your CSV.";
     renderOutput();
   });
 
-  copyButton.addEventListener('click', async () => {
-    const tsv = [output.headers, ...output.rows].map(row => row.join('\t')).join('\n');
+  copyButton.addEventListener("click", async () => {
+    const tsv = [output.headers, ...output.rows]
+      .map((row) => row.join("\t"))
+      .join("\n");
     await navigator.clipboard.writeText(tsv);
-    copyButton.textContent = 'Copied output';
-    setTimeout(() => { copyButton.textContent = 'Copy output'; }, 1800);
+    copyButton.textContent = "Copied output";
+    setTimeout(() => {
+      copyButton.textContent = "Copy output";
+    }, 1800);
   });
 }
 
 // Update status badge based on recent logs
 function updateGlobalStatus() {
-  const globalStatus = document.getElementById('global-status');
+  const globalStatus = document.getElementById("global-status");
   if (!globalStatus) return;
 
   if (state.changeLog.length > 0) {
-    const hoursSinceLastChange = (Date.now() - state.changeLog[0].timestamp) / 3600000;
+    const hoursSinceLastChange =
+      (Date.now() - state.changeLog[0].timestamp) / 3600000;
     if (hoursSinceLastChange < 24) {
       globalStatus.textContent = "Updates Detected";
       globalStatus.style.color = "var(--orange)";
@@ -299,9 +544,9 @@ function updateGlobalStatus() {
 
 // Render monitored course items in sidebar
 function renderSidebarCourses(courseList) {
-  const container = document.getElementById('course-list-container');
-  container.innerHTML = '';
-  
+  const container = document.getElementById("course-list-container");
+  container.innerHTML = "";
+
   if (courseList.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -311,35 +556,43 @@ function renderSidebarCourses(courseList) {
     `;
     return;
   }
-  
+
   // Sort courses: D2L first, then Canvas, then by name
   const sorted = [...courseList].sort((a, b) => {
     if (a.type !== b.type) {
-      return a.type === 'd2l-classlist' ? -1 : 1;
+      return a.type === "d2l-classlist" ? -1 : 1;
     }
     return a.name.localeCompare(b.name);
   });
-  
-  sorted.forEach(course => {
-    const item = document.createElement('div');
+
+  sorted.forEach((course) => {
+    const item = document.createElement("div");
     item.className = `course-item ${course.type}`;
     if (state.selectedCourseId === course.id) {
-      item.classList.add('active');
+      item.classList.add("active");
     }
-    
+
     let typeDisplay = "Canvas Gradebook";
-    if (course.type === 'd2l-classlist') typeDisplay = "D2L Classlist";
-    if (course.type === 'canvas-grades') typeDisplay = "Canvas Grades (Student)";
-    
+    if (course.type === "d2l-classlist") typeDisplay = "D2L Classlist";
+    if (course.type === "canvas-grades")
+      typeDisplay = "Canvas Grades (Student)";
+
     // Calculate status pill details if D2L class list
-    let statusPillHtml = '';
-    if (course.type === 'd2l-classlist') {
+    let statusPillHtml = "";
+    if (course.type === "d2l-classlist") {
       const linkedCanvasIds = state.courseLinks[course.id] || [];
       if (linkedCanvasIds.length === 0) {
         statusPillHtml = `<span class="course-item-status-pill unlinked">Unlinked</span>`;
       } else {
-        const d2lStudents = (state.snapshots[course.id] || []).filter(s => s.status !== 'removed');
-        const { missingFromCanvas, extraInCanvas } = compareRostersMultiple(d2lStudents, linkedCanvasIds, state.snapshots, state.courses);
+        const d2lStudents = (state.snapshots[course.id] || []).filter(
+          (s) => s.status !== "removed",
+        );
+        const { missingFromCanvas, extraInCanvas } = compareRostersMultiple(
+          d2lStudents,
+          linkedCanvasIds,
+          state.snapshots,
+          state.courses,
+        );
         const diffCount = missingFromCanvas.length + extraInCanvas.length;
         if (diffCount > 0) {
           statusPillHtml = `<span class="course-item-status-pill mismatch">${diffCount} Mismatches</span>`;
@@ -351,7 +604,7 @@ function renderSidebarCourses(courseList) {
       const studentList = state.snapshots[course.id] || [];
       statusPillHtml = `<span class="course-item-status-pill synced">${studentList.length} Students</span>`;
     }
-    
+
     item.innerHTML = `
       <div class="course-item-header">
         <h3 class="course-item-name" title="${course.name}">${course.name}</h3>
@@ -362,25 +615,27 @@ function renderSidebarCourses(courseList) {
       </div>
       ${statusPillHtml}
     `;
-    
-    item.addEventListener('click', () => {
+
+    item.addEventListener("click", () => {
       state.selectedCourseId = course.id;
       // Re-render sidebar to highlight active
-      document.querySelectorAll('.course-item').forEach(el => el.classList.remove('active'));
-      item.classList.add('active');
+      document
+        .querySelectorAll(".course-item")
+        .forEach((el) => el.classList.remove("active"));
+      item.classList.add("active");
       renderDetailedPanel();
     });
-    
+
     container.appendChild(item);
   });
 }
 
 // Render detailed operations panel for selected course
 function renderDetailedPanel() {
-  const container = document.getElementById('main-panel-container');
-  
+  const container = document.getElementById("main-panel-container");
+
   if (!state.selectedCourseId || !state.courses[state.selectedCourseId]) {
-    container.classList.remove('full-height-layout');
+    container.classList.remove("full-height-layout");
     container.innerHTML = `
       <div class="no-selection-state">
         <div class="no-selection-card">
@@ -392,101 +647,128 @@ function renderDetailedPanel() {
     `;
     return;
   }
-  
+
   const course = state.courses[state.selectedCourseId];
-  
-  if (course.type === 'canvas-gradebook') {
-    container.classList.add('full-height-layout');
+
+  if (course.type === "canvas-gradebook") {
+    container.classList.add("full-height-layout");
   } else {
-    container.classList.remove('full-height-layout');
+    container.classList.remove("full-height-layout");
   }
 
   const snapshot = state.snapshots[course.id] || [];
   const formattedTime = new Date(course.lastChecked).toLocaleString();
-  
+
   let typeDisplay = "Canvas Gradebook";
-  if (course.type === 'd2l-classlist') typeDisplay = "D2L Classlist";
-  if (course.type === 'canvas-grades') typeDisplay = "Canvas Grades (Student)";
-  
+  if (course.type === "d2l-classlist") typeDisplay = "D2L Classlist";
+  if (course.type === "canvas-grades") typeDisplay = "Canvas Grades (Student)";
+
   // Render D2L Classlist operations layout
-  if (course.type === 'd2l-classlist') {
+  if (course.type === "d2l-classlist") {
     const linkedCanvasIds = state.courseLinks[course.id] || [];
-    const canvasCourses = Object.values(state.courses).filter(c => c.type === 'canvas-gradebook');
-    const unlinkedCanvasCourses = canvasCourses.filter(cc => !linkedCanvasIds.includes(cc.id));
-    
+    const canvasCourses = Object.values(state.courses).filter(
+      (c) => c.type === "canvas-gradebook",
+    );
+    const unlinkedCanvasCourses = canvasCourses.filter(
+      (cc) => !linkedCanvasIds.includes(cc.id),
+    );
+
     // Roster Emails
-    const d2lEmails = snapshot.filter(s => s.status !== 'removed').map(s => s.email).filter(e => e);
-    
+    const d2lEmails = snapshot
+      .filter((s) => s.status !== "removed")
+      .map((s) => s.email)
+      .filter((e) => e);
+
     // Linked Courses Badge Tags
-    let badgesHtml = '';
+    let badgesHtml = "";
     if (linkedCanvasIds.length > 0) {
       badgesHtml = `
         <div class="linked-tags-list">
-          ${linkedCanvasIds.map(id => {
-            const cName = state.courses[id]?.name || `Canvas Course ${id}`;
-            return `
+          ${linkedCanvasIds
+            .map((id) => {
+              const cName = state.courses[id]?.name || `Canvas Course ${id}`;
+              return `
               <span class="linked-tag">
                 🔗 ${cName}
                 <button class="unlink-badge-btn" data-canvas-id="${id}" title="Unlink course">×</button>
               </span>
             `;
-          }).join('')}
+            })
+            .join("")}
         </div>
       `;
     } else {
       badgesHtml = `<span class="linked-label text-muted" style="font-style: italic; font-weight: normal;">No Canvas courses linked yet.</span>`;
     }
-    
+
     // Select dropdown to link another Canvas course
-    let linkDropdownHtml = '';
+    let linkDropdownHtml = "";
     if (unlinkedCanvasCourses.length > 0) {
       linkDropdownHtml = `
         <div class="link-dropdown-row">
-          <label for="link-select-dropdown">${linkedCanvasIds.length > 0 ? 'Link another Canvas Course:' : 'Link to Canvas Course:'}</label>
+          <label for="link-select-dropdown">${linkedCanvasIds.length > 0 ? "Link another Canvas Course:" : "Link to Canvas Course:"}</label>
           <select id="link-select-dropdown" class="link-select">
             <option value="">-- Choose Canvas Course to Link --</option>
-            ${unlinkedCanvasCourses.map(cc => `
+            ${unlinkedCanvasCourses
+              .map(
+                (cc) => `
               <option value="${cc.id}">${cc.name}</option>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </select>
         </div>
       `;
     }
-    
+
     // Roster Mismatch Comparison Panel
-    let comparisonHtml = '';
+    let comparisonHtml = "";
     if (linkedCanvasIds.length > 0) {
-      const activeStudents = snapshot.filter(s => s.status !== 'removed');
-      const { missingFromCanvas, extraInCanvas } = compareRostersMultiple(activeStudents, linkedCanvasIds, state.snapshots, state.courses);
-      
-      let bannerClass = 'success';
-      let bannerText = '✅ Roster Synchronized: No discrepancies detected between D2L and Canvas.';
-      let mismatchListsHtml = '';
-      
+      const activeStudents = snapshot.filter((s) => s.status !== "removed");
+      const { missingFromCanvas, extraInCanvas } = compareRostersMultiple(
+        activeStudents,
+        linkedCanvasIds,
+        state.snapshots,
+        state.courses,
+      );
+
+      let bannerClass = "success";
+      let bannerText =
+        "✅ Roster Synchronized: No discrepancies detected between D2L and Canvas.";
+      let mismatchListsHtml = "";
+
       if (missingFromCanvas.length > 0 || extraInCanvas.length > 0) {
-        bannerClass = 'warning';
+        bannerClass = "warning";
         bannerText = `⚠️ Roster Discrepancies: detected ${missingFromCanvas.length + extraInCanvas.length} unmatched records.`;
-        
+
         let missingColHtml = `
           <div class="mismatch-col">
             <div class="mismatch-col-header">
               <span class="mismatch-col-title">Missing from Canvas (${missingFromCanvas.length})</span>
-              ${missingFromCanvas.length > 0 ? `<button class="copy-btn" id="copy-all-missing">📋 Copy All Emails</button>` : ''}
+              ${missingFromCanvas.length > 0 ? `<button class="copy-btn" id="copy-all-missing">📋 Copy All Emails</button>` : ""}
             </div>
             <div class="mismatch-table-container">
-              ${missingFromCanvas.length === 0 ? `
+              ${
+                missingFromCanvas.length === 0
+                  ? `
                 <div style="padding: 16px; color: var(--text-muted); text-align: center; font-size: 13px;">No students missing from Canvas.</div>
-              ` : `
+              `
+                  : `
                 <div class="mismatch-list-group">
-                  ${missingFromCanvas.map(item => {
-                    const stu = item.student;
-                    const displayEmail = stu.email || 'No email';
-                    const copyAction = stu.email ? `<button class="copy-small-btn" data-email="${stu.email}">📋 Copy</button>` : '';
-                    const missingFromNames = item.missingFrom.map(c => c.name).join(', ');
-                    return `
+                  ${missingFromCanvas
+                    .map((item) => {
+                      const stu = item.student;
+                      const displayEmail = stu.email || "No email";
+                      const copyAction = stu.email
+                        ? `<button class="copy-small-btn" data-email="${stu.email}">📋 Copy</button>`
+                        : "";
+                      const missingFromNames = item.missingFrom
+                        .map((c) => c.name)
+                        .join(", ");
+                      return `
                       <div class="mismatch-row">
                         <div class="student-identity">
-                          <span class="student-name">${stu.name}${stu.orgId ? ` (${stu.orgId})` : ''}</span>
+                          <span class="student-name">${stu.name}${stu.orgId ? ` (${stu.orgId})` : ""}</span>
                           <div class="student-meta">
                             <span>${displayEmail}</span>
                             <span class="mismatch-target-badge">missing from ${missingFromNames}</span>
@@ -495,27 +777,33 @@ function renderDetailedPanel() {
                         ${copyAction}
                       </div>
                     `;
-                  }).join('')}
+                    })
+                    .join("")}
                 </div>
-              `}
+              `
+              }
             </div>
           </div>
         `;
-        
+
         let extraColHtml = `
           <div class="mismatch-col">
             <div class="mismatch-col-header">
               <span class="mismatch-col-title">Extra in Canvas (${extraInCanvas.length})</span>
             </div>
             <div class="mismatch-table-container">
-              ${extraInCanvas.length === 0 ? `
+              ${
+                extraInCanvas.length === 0
+                  ? `
                 <div style="padding: 16px; color: var(--text-muted); text-align: center; font-size: 13px;">No extra students in Canvas.</div>
-              ` : `
+              `
+                  : `
                 <div class="mismatch-list-group">
-                  ${extraInCanvas.map(item => {
-                    const stu = item.student;
-                    const displayEmail = stu.studentEmail || 'No email';
-                    return `
+                  ${extraInCanvas
+                    .map((item) => {
+                      const stu = item.student;
+                      const displayEmail = stu.studentEmail || "No email";
+                      return `
                       <div class="mismatch-row">
                         <div class="student-identity">
                           <span class="student-name">${stu.studentName}</span>
@@ -526,13 +814,15 @@ function renderDetailedPanel() {
                         </div>
                       </div>
                     `;
-                  }).join('')}
+                    })
+                    .join("")}
                 </div>
-              `}
+              `
+              }
             </div>
           </div>
         `;
-        
+
         mismatchListsHtml = `
           <div class="mismatch-grid">
             ${missingColHtml}
@@ -540,7 +830,7 @@ function renderDetailedPanel() {
           </div>
         `;
       }
-      
+
       comparisonHtml = `
         <div class="detail-panel">
           <h3 class="detail-panel-title">Roster Comparison</h3>
@@ -549,7 +839,7 @@ function renderDetailedPanel() {
         </div>
       `;
     }
-    
+
     // Scraped Roster List (Collapsible details)
     let rawRosterHtml = `
       <div class="roster-disclosure" id="raw-roster-disclosure">
@@ -573,34 +863,38 @@ function renderDetailedPanel() {
               </tr>
             </thead>
             <tbody>
-              ${snapshot.map((stu, i) => {
-                const status = stu.status || 'initial';
-                const timestamp = stu.timestamp || course.lastChecked || Date.now();
-                const timeStr = new Date(timestamp).toLocaleString();
-                
-                let statusLabel = 'Initial Setup';
-                if (status === 'added') statusLabel = 'Added';
-                if (status === 'removed') statusLabel = 'Removed';
-                
-                const rowClass = status === 'removed' ? 'class="status-removed-row"' : '';
-                return `
+              ${snapshot
+                .map((stu, i) => {
+                  const status = stu.status || "initial";
+                  const timestamp =
+                    stu.timestamp || course.lastChecked || Date.now();
+                  const timeStr = new Date(timestamp).toLocaleString();
+
+                  let statusLabel = "Initial Setup";
+                  if (status === "added") statusLabel = "Added";
+                  if (status === "removed") statusLabel = "Removed";
+
+                  const rowClass =
+                    status === "removed" ? 'class="status-removed-row"' : "";
+                  return `
                   <tr ${rowClass}>
                     <td>${i + 1}</td>
-                    <td style="font-family: monospace;">${stu.orgId || '—'}</td>
+                    <td style="font-family: monospace;">${stu.orgId || "—"}</td>
                     <td style="font-weight: 500;">${stu.name}</td>
-                    <td>${stu.email || '—'}</td>
-                    <td style="font-family: monospace;">${stu.username || stu.id || '—'}</td>
+                    <td>${stu.email || "—"}</td>
+                    <td style="font-family: monospace;">${stu.username || stu.id || "—"}</td>
                     <td><span class="roster-status-badge status-${status}">${statusLabel}</span></td>
                     <td>${timeStr}</td>
                   </tr>
                 `;
-              }).join('')}
+                })
+                .join("")}
             </tbody>
           </table>
         </div>
       </div>
     `;
-    
+
     container.innerHTML = `
       <div class="course-detail-layout">
         <!-- Header -->
@@ -621,7 +915,7 @@ function renderDetailedPanel() {
               </svg>
               <span>Collapse Sidebar</span>
             </button>
-            ${d2lEmails.length > 0 ? `<button class="copy-btn" id="copy-all-emails">📋 Copy Monitored Emails</button>` : ''}
+            ${d2lEmails.length > 0 ? `<button class="copy-btn" id="copy-all-emails">📋 Copy Monitored Emails</button>` : ""}
             <button class="btn btn-secondary" id="visit-course-url">🔗 Visit Classlist Page</button>
           </div>
         </div>
@@ -645,22 +939,27 @@ function renderDetailedPanel() {
         ${rawRosterHtml}
       </div>
     `;
-    
+
     // Wire D2L Event Listeners
     // Visit Course URL
-    document.getElementById('visit-course-url').addEventListener('click', () => {
-      chrome.tabs.create({ url: course.url });
-    });
-    
+    document
+      .getElementById("visit-course-url")
+      .addEventListener("click", () => {
+        chrome.tabs.create({ url: course.url });
+      });
+
     // Unlink Course Badge click
-    const unlinkBtns = container.querySelectorAll('.unlink-badge-btn');
-    unlinkBtns.forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const canvasId = btn.getAttribute('data-canvas-id');
-        const canvasCourseName = state.courses[canvasId]?.name || `Canvas Course ${canvasId}`;
-        if (confirm(`Are you sure you want to unlink from "${canvasCourseName}"?`)) {
+    const unlinkBtns = container.querySelectorAll(".unlink-badge-btn");
+    unlinkBtns.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const canvasId = btn.getAttribute("data-canvas-id");
+        const canvasCourseName =
+          state.courses[canvasId]?.name || `Canvas Course ${canvasId}`;
+        if (
+          confirm(`Are you sure you want to unlink from "${canvasCourseName}"?`)
+        ) {
           const links = state.courseLinks[course.id] || [];
-          const updatedLinks = links.filter(id => id !== canvasId);
+          const updatedLinks = links.filter((id) => id !== canvasId);
           if (updatedLinks.length === 0) {
             delete state.courseLinks[course.id];
           } else {
@@ -671,86 +970,91 @@ function renderDetailedPanel() {
         }
       });
     });
-    
+
     // Link Course dropdown change
-    const linkDropdown = document.getElementById('link-select-dropdown');
+    const linkDropdown = document.getElementById("link-select-dropdown");
     if (linkDropdown) {
-      linkDropdown.addEventListener('change', async (e) => {
+      linkDropdown.addEventListener("change", async (e) => {
         const canvasCourseId = e.target.value;
         if (!canvasCourseId) return;
-        
+
         if (!state.courseLinks[course.id]) {
           state.courseLinks[course.id] = [];
         }
-        
+
         if (!state.courseLinks[course.id].includes(canvasCourseId)) {
           state.courseLinks[course.id].push(canvasCourseId);
         }
-        
+
         await chrome.storage.local.set({ courseLinks: state.courseLinks });
         await loadAndRenderData();
       });
     }
-    
+
     // Copy Monitored Emails button
-    const copyAllEmailsBtn = document.getElementById('copy-all-emails');
+    const copyAllEmailsBtn = document.getElementById("copy-all-emails");
     if (copyAllEmailsBtn) {
-      copyAllEmailsBtn.addEventListener('click', async () => {
-        const emailList = d2lEmails.join(', ');
+      copyAllEmailsBtn.addEventListener("click", async () => {
+        const emailList = d2lEmails.join(", ");
         try {
           await navigator.clipboard.writeText(emailList);
-          copyAllEmailsBtn.classList.add('copied');
-          copyAllEmailsBtn.textContent = '✅ Copied Emails!';
+          copyAllEmailsBtn.classList.add("copied");
+          copyAllEmailsBtn.textContent = "✅ Copied Emails!";
           setTimeout(() => {
-            copyAllEmailsBtn.classList.remove('copied');
-            copyAllEmailsBtn.textContent = '📋 Copy Monitored Emails';
+            copyAllEmailsBtn.classList.remove("copied");
+            copyAllEmailsBtn.textContent = "📋 Copy Monitored Emails";
           }, 2000);
         } catch (err) {
-          console.error('Clipboard copy failed:', err);
+          console.error("Clipboard copy failed:", err);
         }
       });
     }
-    
+
     // Copy All Missing Emails button
-    const copyAllMissingBtn = document.getElementById('copy-all-missing');
+    const copyAllMissingBtn = document.getElementById("copy-all-missing");
     if (copyAllMissingBtn) {
-      copyAllMissingBtn.addEventListener('click', async () => {
-        const activeStudents = snapshot.filter(s => s.status !== 'removed');
-        const { missingFromCanvas } = compareRostersMultiple(activeStudents, linkedCanvasIds, state.snapshots, state.courses);
+      copyAllMissingBtn.addEventListener("click", async () => {
+        const activeStudents = snapshot.filter((s) => s.status !== "removed");
+        const { missingFromCanvas } = compareRostersMultiple(
+          activeStudents,
+          linkedCanvasIds,
+          state.snapshots,
+          state.courses,
+        );
         const missingEmails = missingFromCanvas
-          .map(item => item.student.email)
-          .filter(email => email)
-          .join(', ');
-        
+          .map((item) => item.student.email)
+          .filter((email) => email)
+          .join(", ");
+
         if (missingEmails) {
           try {
             await navigator.clipboard.writeText(missingEmails);
-            copyAllMissingBtn.classList.add('copied');
-            copyAllMissingBtn.textContent = '✅ Copied Missing!';
+            copyAllMissingBtn.classList.add("copied");
+            copyAllMissingBtn.textContent = "✅ Copied Missing!";
             setTimeout(() => {
-              copyAllMissingBtn.classList.remove('copied');
-              copyAllMissingBtn.textContent = '📋 Copy All Emails';
+              copyAllMissingBtn.classList.remove("copied");
+              copyAllMissingBtn.textContent = "📋 Copy All Emails";
             }, 2000);
           } catch (err) {
-            console.error('Clipboard copy failed:', err);
+            console.error("Clipboard copy failed:", err);
           }
         }
       });
     }
-    
+
     // Copy Single Mismatch Email buttons
-    const copySmallBtns = container.querySelectorAll('.copy-small-btn');
-    copySmallBtns.forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const email = btn.getAttribute('data-email');
+    const copySmallBtns = container.querySelectorAll(".copy-small-btn");
+    copySmallBtns.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const email = btn.getAttribute("data-email");
         if (email) {
           try {
             await navigator.clipboard.writeText(email);
             const originalText = btn.textContent;
-            btn.classList.add('copied');
-            btn.textContent = '✅';
+            btn.classList.add("copied");
+            btn.textContent = "✅";
             setTimeout(() => {
-              btn.classList.remove('copied');
+              btn.classList.remove("copied");
               btn.textContent = originalText;
             }, 1500);
           } catch (err) {
@@ -759,25 +1063,25 @@ function renderDetailedPanel() {
         }
       });
     });
-    
+
     // Roster Toggle Collapsible Trigger
-    const rosterTrigger = document.getElementById('roster-toggle-trigger');
-    const rosterDisclosure = document.getElementById('raw-roster-disclosure');
+    const rosterTrigger = document.getElementById("roster-toggle-trigger");
+    const rosterDisclosure = document.getElementById("raw-roster-disclosure");
     if (rosterTrigger && rosterDisclosure) {
-      rosterTrigger.addEventListener('click', () => {
-        rosterDisclosure.classList.toggle('open');
+      rosterTrigger.addEventListener("click", () => {
+        rosterDisclosure.classList.toggle("open");
       });
     }
 
     // Wire Sidebar Toggle
     wireSidebarToggle();
-  } 
+  }
   // Render Canvas Course operations layout
   else {
-    let mainContentHtml = '';
-    let infoAlertHtml = '';
+    let mainContentHtml = "";
+    let infoAlertHtml = "";
 
-    if (course.type === 'canvas-grades') {
+    if (course.type === "canvas-grades") {
       infoAlertHtml = `
         <div class="detail-panel" style="background: hsla(199, 89%, 48%, 0.05); border-color: hsla(199, 89%, 48%, 0.25);">
           <h3 class="detail-panel-title" style="color: var(--blue);">💡 Canvas Student Grades Snapshot</h3>
@@ -808,28 +1112,37 @@ function renderDetailedPanel() {
                 </tr>
               </thead>
               <tbody>
-                ${snapshot.map((item, i) => {
-                  const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : '—';
-                  const historyHtml = (item.history && item.history.length > 0)
-                    ? `<div class="grade-history-timeline">
-                         ${item.history.map(h => `
+                ${snapshot
+                  .map((item, i) => {
+                    const timeStr = item.timestamp
+                      ? new Date(item.timestamp).toLocaleString()
+                      : "—";
+                    const historyHtml =
+                      item.history && item.history.length > 0
+                        ? `<div class="grade-history-timeline">
+                         ${item.history
+                           .map(
+                             (h) => `
                            <div class="timeline-step">
                              <span class="timeline-grade">${h.grade}</span>
                              <span class="timeline-time">${new Date(h.timestamp).toLocaleString()}</span>
                            </div>
-                         `).join('')}
+                         `,
+                           )
+                           .join("")}
                        </div>`
-                    : '<span class="text-muted">No edits</span>';
-                  return `
+                        : '<span class="text-muted">No edits</span>';
+                    return `
                     <tr>
                       <td>${i + 1}</td>
                       <td style="font-weight: 500;">${item.assignmentName}</td>
-                      <td style="font-weight: bold; color: var(--accent-color);">${item.grade || '—'}</td>
+                      <td style="font-weight: bold; color: var(--accent-color);">${item.grade || "—"}</td>
                       <td>${timeStr}</td>
                       <td>${historyHtml}</td>
                     </tr>
                   `;
-                }).join('')}
+                  })
+                  .join("")}
               </tbody>
             </table>
           </div>
@@ -837,7 +1150,7 @@ function renderDetailedPanel() {
       `;
     } else {
       if (state.dismissCanvasGradebookAlert) {
-        infoAlertHtml = '';
+        infoAlertHtml = "";
       } else {
         infoAlertHtml = `
           <div class="detail-panel info-alert" style="background: hsla(199, 89%, 48%, 0.05); border-color: hsla(199, 89%, 48%, 0.25); position: relative; padding-right: 40px;">
@@ -874,17 +1187,24 @@ function renderDetailedPanel() {
                 </tr>
               </thead>
               <tbody>
-                ${snapshot.map((stu, i) => {
-                  const gradesEntries = Object.entries(stu.grades || {});
-                  const gradedCount = gradesEntries.filter(([_, val]) => {
-                    const gradeObj = typeof val === 'string' ? { score: val } : val;
-                    return gradeObj && gradeObj.score && gradeObj.score !== 'N/A' && gradeObj.score !== '';
-                  }).length;
-                  
-                  const d2lStu = findD2LStudentForCanvas(stu, course.id);
-                  const d2lOrgId = d2lStu ? (d2lStu.orgId || d2lStu.id) : '—';
-                  
-                  return `
+                ${snapshot
+                  .map((stu, i) => {
+                    const gradesEntries = Object.entries(stu.grades || {});
+                    const gradedCount = gradesEntries.filter(([_, val]) => {
+                      const gradeObj =
+                        typeof val === "string" ? { score: val } : val;
+                      return (
+                        gradeObj &&
+                        gradeObj.score &&
+                        gradeObj.score !== "N/A" &&
+                        gradeObj.score !== ""
+                      );
+                    }).length;
+
+                    const d2lStu = findD2LStudentForCanvas(stu, course.id);
+                    const d2lOrgId = d2lStu ? d2lStu.orgId || d2lStu.id : "—";
+
+                    return `
                     <tr class="student-row-expandable" data-student-id="${stu.studentId}">
                       <td class="chevron-cell">
                         <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -894,8 +1214,8 @@ function renderDetailedPanel() {
                       <td>${i + 1}</td>
                       <td style="font-family: monospace;">${d2lOrgId}</td>
                       <td style="font-weight: 500;">${stu.studentName}</td>
-                      <td>${stu.studentEmail || '—'}</td>
-                      <td style="font-family: monospace;">${stu.studentId || '—'}</td>
+                      <td>${stu.studentEmail || "—"}</td>
+                      <td style="font-family: monospace;">${stu.studentId || "—"}</td>
                       <td><span class="roster-status-badge status-initial">${gradedCount} / ${gradesEntries.length}</span></td>
                     </tr>
                     <tr class="student-grades-detail-row" id="detail-${stu.studentId}" style="display: none;">
@@ -911,23 +1231,44 @@ function renderDetailedPanel() {
                               </tr>
                             </thead>
                             <tbody>
-                              ${gradesEntries.length === 0 ? `
+                              ${
+                                gradesEntries.length === 0
+                                  ? `
                                 <tr><td colspan="4" class="text-muted" style="text-align: center;">No assignments found for this student.</td></tr>
-                              ` : gradesEntries.map(([assignmentName, val]) => {
-                                const gradeObj = typeof val === 'string' ? { score: val, timestamp: null, history: [] } : val;
-                                const score = gradeObj.score || '—';
-                                const timeStr = gradeObj.timestamp ? new Date(gradeObj.timestamp).toLocaleString() : '—';
-                                const historyHtml = (gradeObj.history && gradeObj.history.length > 0)
-                                  ? `<div class="grade-history-timeline">
-                                       ${gradeObj.history.map(h => `
+                              `
+                                  : gradesEntries
+                                      .map(([assignmentName, val]) => {
+                                        const gradeObj =
+                                          typeof val === "string"
+                                            ? {
+                                                score: val,
+                                                timestamp: null,
+                                                history: [],
+                                              }
+                                            : val;
+                                        const score = gradeObj.score || "—";
+                                        const timeStr = gradeObj.timestamp
+                                          ? new Date(
+                                              gradeObj.timestamp,
+                                            ).toLocaleString()
+                                          : "—";
+                                        const historyHtml =
+                                          gradeObj.history &&
+                                          gradeObj.history.length > 0
+                                            ? `<div class="grade-history-timeline">
+                                       ${gradeObj.history
+                                         .map(
+                                           (h) => `
                                          <div class="timeline-step">
                                            <span class="timeline-grade">${h.score}</span>
                                            <span class="timeline-time">${new Date(h.timestamp).toLocaleString()}</span>
                                          </div>
-                                       `).join('')}
+                                       `,
+                                         )
+                                         .join("")}
                                      </div>`
-                                  : '<span class="text-muted">No edits</span>';
-                                return `
+                                            : '<span class="text-muted">No edits</span>';
+                                        return `
                                   <tr>
                                     <td style="font-weight: 500;">${assignmentName}</td>
                                     <td style="font-weight: bold; color: var(--accent-color);">${score}</td>
@@ -935,21 +1276,24 @@ function renderDetailedPanel() {
                                     <td>${historyHtml}</td>
                                   </tr>
                                 `;
-                              }).join('')}
+                                      })
+                                      .join("")
+                              }
                             </tbody>
                           </table>
                         </div>
                       </td>
                     </tr>
                   `;
-                }).join('')}
+                  })
+                  .join("")}
               </tbody>
             </table>
           </div>
         </div>
       `;
     }
-    
+
     container.innerHTML = `
       <div class="course-detail-layout">
         <!-- Header -->
@@ -970,7 +1314,7 @@ function renderDetailedPanel() {
               </svg>
               <span>Collapse Sidebar</span>
             </button>
-            <button class="btn btn-secondary" id="visit-course-url">🔗 Visit ${course.type === 'canvas-grades' ? 'Grades' : 'Gradebook'} Page</button>
+            <button class="btn btn-secondary" id="visit-course-url">🔗 Visit ${course.type === "canvas-grades" ? "Grades" : "Gradebook"} Page</button>
           </div>
         </div>
         
@@ -981,19 +1325,21 @@ function renderDetailedPanel() {
         ${mainContentHtml}
       </div>
     `;
-    
+
     // Wire Canvas Event Listeners
-    document.getElementById('visit-course-url').addEventListener('click', () => {
-      chrome.tabs.create({ url: course.url });
-    });
-    
+    document
+      .getElementById("visit-course-url")
+      .addEventListener("click", () => {
+        chrome.tabs.create({ url: course.url });
+      });
+
     // Wire Alert Dismissal
-    const closeAlertBtn = document.getElementById('close-info-alert');
+    const closeAlertBtn = document.getElementById("close-info-alert");
     if (closeAlertBtn) {
-      closeAlertBtn.addEventListener('click', async () => {
-        const alertEl = closeAlertBtn.closest('.info-alert');
+      closeAlertBtn.addEventListener("click", async () => {
+        const alertEl = closeAlertBtn.closest(".info-alert");
         if (alertEl) {
-          alertEl.style.display = 'none';
+          alertEl.style.display = "none";
           state.dismissCanvasGradebookAlert = true;
           await chrome.storage.local.set({ dismissCanvasGradebookAlert: true });
         }
@@ -1002,36 +1348,40 @@ function renderDetailedPanel() {
 
     // Wire Sidebar Toggle
     wireSidebarToggle();
-    
+
     // Roster Toggle Collapsible Trigger
-    const rosterTrigger = document.getElementById('roster-toggle-trigger');
-    const rosterDisclosure = document.getElementById('raw-roster-disclosure');
+    const rosterTrigger = document.getElementById("roster-toggle-trigger");
+    const rosterDisclosure = document.getElementById("raw-roster-disclosure");
     if (rosterTrigger && rosterDisclosure) {
-      rosterTrigger.addEventListener('click', () => {
-        rosterDisclosure.classList.toggle('open');
-        const content = rosterDisclosure.querySelector('.roster-disclosure-content');
-        if (rosterDisclosure.classList.contains('open')) {
-          content.style.display = 'block';
+      rosterTrigger.addEventListener("click", () => {
+        rosterDisclosure.classList.toggle("open");
+        const content = rosterDisclosure.querySelector(
+          ".roster-disclosure-content",
+        );
+        if (rosterDisclosure.classList.contains("open")) {
+          content.style.display = "block";
         } else {
-          content.style.display = 'none';
+          content.style.display = "none";
         }
       });
     }
 
-    if (course.type === 'canvas-gradebook') {
-      const expandableRows = container.querySelectorAll('.student-row-expandable');
-      expandableRows.forEach(row => {
-        row.addEventListener('click', () => {
-          const studentId = row.getAttribute('data-student-id');
+    if (course.type === "canvas-gradebook") {
+      const expandableRows = container.querySelectorAll(
+        ".student-row-expandable",
+      );
+      expandableRows.forEach((row) => {
+        row.addEventListener("click", () => {
+          const studentId = row.getAttribute("data-student-id");
           const detailRow = container.querySelector(`#detail-${studentId}`);
           if (detailRow) {
-            const isVisible = detailRow.style.display !== 'none';
+            const isVisible = detailRow.style.display !== "none";
             if (isVisible) {
-              detailRow.style.display = 'none';
-              row.classList.remove('expanded');
+              detailRow.style.display = "none";
+              row.classList.remove("expanded");
             } else {
-              detailRow.style.display = 'table-row';
-              row.classList.add('expanded');
+              detailRow.style.display = "table-row";
+              row.classList.add("expanded");
             }
           }
         });
@@ -1042,16 +1392,16 @@ function renderDetailedPanel() {
 
 // Render the timeline of updates
 function renderLogs() {
-  const container = document.getElementById('log-timeline-container');
-  const filterVal = document.getElementById('log-filter').value;
-  
-  container.innerHTML = '';
-  
-  const filteredLogs = state.changeLog.filter(log => {
-    if (filterVal === 'all') return true;
+  const container = document.getElementById("log-timeline-container");
+  const filterVal = document.getElementById("log-filter").value;
+
+  container.innerHTML = "";
+
+  const filteredLogs = state.changeLog.filter((log) => {
+    if (filterVal === "all") return true;
     return log.category === filterVal;
   });
-  
+
   if (filteredLogs.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
@@ -1061,15 +1411,15 @@ function renderLogs() {
     `;
     return;
   }
-  
-  filteredLogs.forEach(log => {
-    const card = document.createElement('div');
+
+  filteredLogs.forEach((log) => {
+    const card = document.createElement("div");
     card.className = `log-card ${log.type}`;
-    
+
     const formattedTime = new Date(log.timestamp).toLocaleString();
-    const typeLabel = log.type.replace('-', ' ');
-    
-    let logActionHtml = '';
+    const typeLabel = log.type.replace("-", " ");
+
+    let logActionHtml = "";
     if (log.details && log.details.email) {
       logActionHtml = `
         <div class="log-action-block">
@@ -1077,7 +1427,7 @@ function renderLogs() {
         </div>
       `;
     }
-    
+
     card.innerHTML = `
       <div class="log-details-block">
         <div class="log-meta-info">
@@ -1089,28 +1439,28 @@ function renderLogs() {
       </div>
       ${logActionHtml}
     `;
-    
+
     if (log.details && log.details.email) {
-      const copyBtn = card.querySelector('.copy-single-email-btn');
+      const copyBtn = card.querySelector(".copy-single-email-btn");
       if (copyBtn) {
-        copyBtn.addEventListener('click', async (e) => {
+        copyBtn.addEventListener("click", async (e) => {
           e.stopPropagation();
-          const email = copyBtn.getAttribute('data-email');
+          const email = copyBtn.getAttribute("data-email");
           try {
             await navigator.clipboard.writeText(email);
-            copyBtn.classList.add('copied');
-            copyBtn.textContent = '✅ Copied!';
+            copyBtn.classList.add("copied");
+            copyBtn.textContent = "✅ Copied!";
             setTimeout(() => {
-              copyBtn.classList.remove('copied');
-              copyBtn.textContent = '📋 Copy Email';
+              copyBtn.classList.remove("copied");
+              copyBtn.textContent = "📋 Copy Email";
             }, 2000);
           } catch (err) {
-            console.error('Clipboard copy failed:', err);
+            console.error("Clipboard copy failed:", err);
           }
         });
       }
     }
-    
+
     container.appendChild(card);
   });
 }
@@ -1118,27 +1468,29 @@ function renderLogs() {
 // Action button handlers setup
 function setupActionHandlers() {
   // Filter change listener for logs
-  document.getElementById('log-filter').addEventListener('change', () => {
+  document.getElementById("log-filter").addEventListener("change", () => {
     renderLogs();
   });
-  
+
   // Open Test Playground
-  document.getElementById('open-playground').addEventListener('click', () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('playground/playground.html') });
+  document.getElementById("open-playground").addEventListener("click", () => {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("playground/playground.html"),
+    });
   });
-  
+
   // Export to CSV
-  document.getElementById('export-csv').addEventListener('click', () => {
+  document.getElementById("export-csv").addEventListener("click", () => {
     if (state.changeLog.length === 0) {
       alert("No logs available to export.");
       return;
     }
-    
+
     const csvContent = convertLogsToCSV(state.changeLog);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
+
+    const a = document.createElement("a");
     a.href = url;
     a.download = `lms_monitor_change_log_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
@@ -1146,33 +1498,46 @@ function setupActionHandlers() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
-  
+
   // Copy Debug Info to Clipboard
-  document.getElementById('copy-debug').addEventListener('click', async () => {
-    const { debugLMSInfo } = await chrome.storage.local.get('debugLMSInfo');
+  document.getElementById("copy-debug").addEventListener("click", async () => {
+    const { debugLMSInfo } = await chrome.storage.local.get("debugLMSInfo");
     if (!debugLMSInfo) {
-      alert("No debug info captured yet. Please reload the D2L Classlist page first to let it attempt scanning.");
+      alert(
+        "No debug info captured yet. Please reload the D2L Classlist page first to let it attempt scanning.",
+      );
       return;
     }
-    
+
     try {
-      await navigator.clipboard.writeText(JSON.stringify(debugLMSInfo, null, 2));
-      alert("Debug info copied to clipboard! Please paste it in your chat response.");
+      await navigator.clipboard.writeText(
+        JSON.stringify(debugLMSInfo, null, 2),
+      );
+      alert(
+        "Debug info copied to clipboard! Please paste it in your chat response.",
+      );
     } catch (err) {
       console.error(err);
-      alert("Failed to write to clipboard. Showing raw details:\n\n" + JSON.stringify(debugLMSInfo).substring(0, 400));
+      alert(
+        "Failed to write to clipboard. Showing raw details:\n\n" +
+          JSON.stringify(debugLMSInfo).substring(0, 400),
+      );
     }
   });
-  
+
   // Clear Database
-  document.getElementById('clear-logs').addEventListener('click', async () => {
-    if (confirm("Are you sure you want to delete all saved courses, snapshots, and history? This cannot be undone.")) {
+  document.getElementById("clear-logs").addEventListener("click", async () => {
+    if (
+      confirm(
+        "Are you sure you want to delete all saved courses, snapshots, and history? This cannot be undone.",
+      )
+    ) {
       await chrome.storage.local.clear();
       await chrome.storage.local.set({
         unreadCount: 0,
         courses: {},
         changeLog: [],
-        courseLinks: {}
+        courseLinks: {},
       });
       state.selectedCourseId = null;
       await loadAndRenderData();
@@ -1183,27 +1548,33 @@ function setupActionHandlers() {
 
 // CSV Conversion Helper
 function convertLogsToCSV(logs) {
-  const headers = ['Timestamp', 'Course Name', 'Category', 'Change Type', 'Description'];
-  const rows = logs.map(log => [
+  const headers = [
+    "Timestamp",
+    "Course Name",
+    "Category",
+    "Change Type",
+    "Description",
+  ];
+  const rows = logs.map((log) => [
     new Date(log.timestamp).toISOString(),
     `"${log.courseName.replace(/"/g, '""')}"`,
     log.category,
     log.type,
-    `"${log.description.replace(/"/g, '""')}"`
+    `"${log.description.replace(/"/g, '""')}"`,
   ]);
-  
-  return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+
+  return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
 }
 
 // Friendly time formatter
 function formatTimeAgo(timestamp) {
-  if (!timestamp) return 'Never';
+  if (!timestamp) return "Never";
   const diff = Date.now() - timestamp;
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);
-  
-  if (mins < 1) return 'Just now';
+
+  if (mins < 1) return "Just now";
   if (mins < 60) return `${mins}m ago`;
   if (hours < 24) return `${hours}h ago`;
   return `${days}d ago`;
@@ -1212,24 +1583,24 @@ function formatTimeAgo(timestamp) {
 // Name normalization helper: converts "Last, First" -> "first last", lowercase, alphanumeric
 function normalizeName(name) {
   if (!name) return "";
-  
+
   // Convert to lowercase and trim
   let normalized = name.toLowerCase().trim();
-  
+
   // If it contains a comma (like "Last, First"), split and reverse it
-  if (normalized.includes(',')) {
-    const parts = normalized.split(',').map(p => p.trim());
+  if (normalized.includes(",")) {
+    const parts = normalized.split(",").map((p) => p.trim());
     if (parts.length >= 2) {
       const last = parts[0];
-      const first = parts.slice(1).join(' ');
+      const first = parts.slice(1).join(" ");
       normalized = `${first} ${last}`;
     }
   }
-  
+
   // Remove non-alphanumeric characters except spaces
-  normalized = normalized.replace(/[^a-z0-9\s]/g, '');
+  normalized = normalized.replace(/[^a-z0-9\s]/g, "");
   // Collapse multiple spaces to a single space
-  normalized = normalized.replace(/\s+/g, ' ').trim();
+  normalized = normalized.replace(/\s+/g, " ").trim();
   return normalized;
 }
 
@@ -1239,10 +1610,10 @@ function nameMatch(name1, name2) {
   const n2 = normalizeName(name2);
   if (!n1 || !n2) return false;
   if (n1 === n2) return true;
-  
+
   // Fallback: compare first and last words
-  const tokens1 = n1.split(' ');
-  const tokens2 = n2.split(' ');
+  const tokens1 = n1.split(" ");
+  const tokens2 = n2.split(" ");
   if (tokens1.length >= 2 && tokens2.length >= 2) {
     const first1 = tokens1[0];
     const last1 = tokens1[tokens1.length - 1];
@@ -1263,11 +1634,13 @@ function normalizeEmail(email) {
 // Find matched D2L student for a Canvas student by scanning linked D2L course snapshots
 function findD2LStudentForCanvas(canvasStu, canvasCourseId) {
   const canvasEmail = normalizeEmail(canvasStu.studentEmail);
-  
-  for (const [d2lCourseId, canvasIds] of Object.entries(state.courseLinks || {})) {
+
+  for (const [d2lCourseId, canvasIds] of Object.entries(
+    state.courseLinks || {},
+  )) {
     if (Array.isArray(canvasIds) && canvasIds.includes(canvasCourseId)) {
       const d2lStudents = state.snapshots[d2lCourseId] || [];
-      const matched = d2lStudents.find(d2lStu => {
+      const matched = d2lStudents.find((d2lStu) => {
         const d2lEmail = normalizeEmail(d2lStu.email);
         // Use email-first matching: only match if both emails exist and match
         if (d2lEmail && canvasEmail) {
@@ -1288,14 +1661,14 @@ function findD2LStudentForCanvas(canvasStu, canvasCourseId) {
 function compareRosters(d2lStudents, canvasStudents) {
   const missingFromCanvas = [];
   const extraInCanvas = [];
-  
+
   // For each D2L student, try to find a matching Canvas student
-  d2lStudents.forEach(d2lStu => {
+  d2lStudents.forEach((d2lStu) => {
     const d2lEmail = normalizeEmail(d2lStu.email);
-    
-    const matched = canvasStudents.find(canvasStu => {
+
+    const matched = canvasStudents.find((canvasStu) => {
       const canvasEmail = normalizeEmail(canvasStu.studentEmail);
-      
+
       // Use email-first matching: only match if both emails exist and match
       if (d2lEmail && canvasEmail) {
         return d2lEmail === canvasEmail;
@@ -1303,19 +1676,19 @@ function compareRosters(d2lStudents, canvasStudents) {
       // If either email is missing, don't match (strict email-based matching)
       return false;
     });
-    
+
     if (!matched) {
       missingFromCanvas.push(d2lStu);
     }
   });
-  
+
   // For each Canvas student, try to find a matching D2L student
-  canvasStudents.forEach(canvasStu => {
+  canvasStudents.forEach((canvasStu) => {
     const canvasEmail = normalizeEmail(canvasStu.studentEmail);
-    
-    const matched = d2lStudents.find(d2lStu => {
+
+    const matched = d2lStudents.find((d2lStu) => {
       const d2lEmail = normalizeEmail(d2lStu.email);
-      
+
       // Use email-first matching: only match if both emails exist and match
       if (d2lEmail && canvasEmail) {
         return d2lEmail === canvasEmail;
@@ -1323,27 +1696,32 @@ function compareRosters(d2lStudents, canvasStudents) {
       // If either email is missing, don't match (strict email-based matching)
       return false;
     });
-    
+
     if (!matched) {
       extraInCanvas.push(canvasStu);
     }
   });
-  
+
   return { missingFromCanvas, extraInCanvas };
 }
 
 // Compare rosters across multiple linked Canvas courses
-function compareRostersMultiple(d2lStudents, canvasCourseIds, snapshots, coursesMap) {
+function compareRostersMultiple(
+  d2lStudents,
+  canvasCourseIds,
+  snapshots,
+  coursesMap,
+) {
   const missingFromCanvas = [];
   const extraInCanvas = [];
 
-  d2lStudents.forEach(d2lStu => {
+  d2lStudents.forEach((d2lStu) => {
     const d2lEmail = normalizeEmail(d2lStu.email);
     const missingFromCourses = [];
 
-    canvasCourseIds.forEach(canvasCourseId => {
+    canvasCourseIds.forEach((canvasCourseId) => {
       const canvasStudents = snapshots[canvasCourseId] || [];
-      const matched = canvasStudents.find(canvasStu => {
+      const matched = canvasStudents.find((canvasStu) => {
         const canvasEmail = normalizeEmail(canvasStu.studentEmail);
 
         // Use email-first matching: only match if both emails exist and match
@@ -1355,7 +1733,8 @@ function compareRostersMultiple(d2lStudents, canvasCourseIds, snapshots, courses
       });
 
       if (!matched) {
-        const courseName = coursesMap[canvasCourseId]?.name || `Canvas Course ${canvasCourseId}`;
+        const courseName =
+          coursesMap[canvasCourseId]?.name || `Canvas Course ${canvasCourseId}`;
         missingFromCourses.push({ id: canvasCourseId, name: courseName });
       }
     });
@@ -1363,19 +1742,20 @@ function compareRostersMultiple(d2lStudents, canvasCourseIds, snapshots, courses
     if (missingFromCourses.length > 0) {
       missingFromCanvas.push({
         student: d2lStu,
-        missingFrom: missingFromCourses
+        missingFrom: missingFromCourses,
       });
     }
   });
 
-  canvasCourseIds.forEach(canvasCourseId => {
+  canvasCourseIds.forEach((canvasCourseId) => {
     const canvasStudents = snapshots[canvasCourseId] || [];
-    const courseName = coursesMap[canvasCourseId]?.name || `Canvas Course ${canvasCourseId}`;
+    const courseName =
+      coursesMap[canvasCourseId]?.name || `Canvas Course ${canvasCourseId}`;
 
-    canvasStudents.forEach(canvasStu => {
+    canvasStudents.forEach((canvasStu) => {
       const canvasEmail = normalizeEmail(canvasStu.studentEmail);
 
-      const matched = d2lStudents.find(d2lStu => {
+      const matched = d2lStudents.find((d2lStu) => {
         const d2lEmail = normalizeEmail(d2lStu.email);
 
         // Use email-first matching: only match if both emails exist and match
@@ -1389,7 +1769,7 @@ function compareRostersMultiple(d2lStudents, canvasCourseIds, snapshots, courses
       if (!matched) {
         extraInCanvas.push({
           student: canvasStu,
-          extraIn: { id: canvasCourseId, name: courseName }
+          extraIn: { id: canvasCourseId, name: courseName },
         });
       }
     });
@@ -1402,7 +1782,7 @@ function compareRostersMultiple(d2lStudents, canvasCourseIds, snapshots, courses
 function normalizeCourseLinks(courseLinks) {
   let updated = false;
   for (const d2lId in courseLinks) {
-    if (typeof courseLinks[d2lId] === 'string') {
+    if (typeof courseLinks[d2lId] === "string") {
       courseLinks[d2lId] = [courseLinks[d2lId]];
       updated = true;
     } else if (!Array.isArray(courseLinks[d2lId])) {
@@ -1415,32 +1795,34 @@ function normalizeCourseLinks(courseLinks) {
 
 // Wire Sidebar Toggle functionality shared across layouts
 function wireSidebarToggle() {
-  const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+  const toggleSidebarBtn = document.getElementById("toggle-sidebar");
   if (toggleSidebarBtn) {
-    const gridLayout = document.querySelector('#tab-monitor .grid-layout');
-    
+    const gridLayout = document.querySelector("#tab-monitor .grid-layout");
+
     // Initialize text/state
-    const isCollapsed = gridLayout ? gridLayout.classList.contains('sidebar-collapsed') : false;
-    const span = toggleSidebarBtn.querySelector('span');
+    const isCollapsed = gridLayout
+      ? gridLayout.classList.contains("sidebar-collapsed")
+      : false;
+    const span = toggleSidebarBtn.querySelector("span");
     if (span) {
       span.textContent = isCollapsed ? "Show Sidebar" : "Collapse Sidebar";
     }
     if (isCollapsed) {
-      toggleSidebarBtn.classList.add('active-toggle');
+      toggleSidebarBtn.classList.add("active-toggle");
     } else {
-      toggleSidebarBtn.classList.remove('active-toggle');
+      toggleSidebarBtn.classList.remove("active-toggle");
     }
-    
-    toggleSidebarBtn.addEventListener('click', () => {
+
+    toggleSidebarBtn.addEventListener("click", () => {
       if (gridLayout) {
-        const nowCollapsed = gridLayout.classList.toggle('sidebar-collapsed');
+        const nowCollapsed = gridLayout.classList.toggle("sidebar-collapsed");
         if (span) {
           span.textContent = nowCollapsed ? "Show Sidebar" : "Collapse Sidebar";
         }
         if (nowCollapsed) {
-          toggleSidebarBtn.classList.add('active-toggle');
+          toggleSidebarBtn.classList.add("active-toggle");
         } else {
-          toggleSidebarBtn.classList.remove('active-toggle');
+          toggleSidebarBtn.classList.remove("active-toggle");
         }
       }
     });

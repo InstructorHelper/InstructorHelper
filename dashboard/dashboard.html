@@ -1,30 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LMS Monitor - Dedicated Dashboard</title>
   <link rel="stylesheet" href="dashboard.css">
 </head>
+
 <body>
   <div class="dashboard-container">
     <!-- Header -->
     <header class="main-header">
       <div class="header-logo">
         <svg class="header-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
         </svg>
         <h1>LMS Monitor Dashboard</h1>
       </div>
-      
+
       <!-- Top Navigation Tabs -->
       <nav class="nav-tabs">
         <button class="tab-link active" data-tab="tab-monitor">Course Monitor</button>
         <button class="tab-link" data-tab="tab-attendance">Attendance</button>
         <button class="tab-link" data-tab="tab-logs">Change Log History</button>
       </nav>
-      
+
       <div class="header-status">
         <span class="status-badge" id="global-status">Idle</span>
       </div>
@@ -32,7 +37,7 @@
 
     <!-- Content Sections -->
     <main class="content-viewport">
-      
+
       <!-- Tab 1: Course Monitor -->
       <section id="tab-monitor" class="tab-content active">
         <div class="grid-layout">
@@ -42,7 +47,7 @@
               <h2>Monitored Courses</h2>
               <span class="count-badge" id="courses-count">0</span>
             </div>
-            
+
             <div class="course-list-scrollable" id="course-list-container">
               <!-- Dynamically populated course list items -->
               <div class="empty-state">
@@ -76,7 +81,8 @@
               <div class="no-selection-card">
                 <span class="large-icon">👈</span>
                 <h2>Select a Course</h2>
-                <p>Choose a monitored course from the sidebar to link sections, view roster discrepancies, copy student emails, and manage snapshots.</p>
+                <p>Choose a monitored course from the sidebar to link sections, view roster discrepancies, copy student
+                  emails, and manage snapshots.</p>
               </div>
             </div>
           </article>
@@ -89,7 +95,8 @@
           <div class="attendance-header">
             <div>
               <h2>Attendance Workspace</h2>
-              <p>Paste the CSV copied from your attendance form, match it to a monitored D2L roster, and copy the result.</p>
+              <p>Paste the CSV copied from your attendance form, match it to a monitored D2L roster, and copy the
+                result.</p>
             </div>
             <label class="attendance-course-picker" for="attendance-course-select">
               <span>D2L course</span>
@@ -106,7 +113,8 @@
                 </div>
                 <span class="attendance-file-status" id="attendance-input-status">No data loaded</span>
               </div>
-              <textarea id="attendance-csv-input" class="attendance-csv-input" placeholder="Paste the copied CSV here...\nId,Start time,Completion time,Email,Name,..."></textarea>
+              <textarea id="attendance-csv-input" class="attendance-csv-input"
+                placeholder="Paste the copied CSV here...\nId,Start time,Completion time,Email,Name,..."></textarea>
               <div class="attendance-actions">
                 <button class="btn btn-primary" id="attendance-parse">Parse submissions</button>
                 <button class="btn btn-secondary" id="attendance-clear">Clear</button>
@@ -125,17 +133,41 @@
             </section>
           </div>
 
-          <section class="attendance-output-panel">
+          <section class="attendance-roster-panel">
             <div class="attendance-output-heading">
               <div>
                 <span class="step-label">03</span>
+                <h3>Tracked class members</h3>
+                <p id="attendance-roster-meta">Choose the members included in attendance output.</p>
+              </div>
+              <label class="attendance-sort-picker" for="attendance-roster-sort">
+                <span>Sort by</span>
+                <select id="attendance-roster-sort" class="form-select">
+                  <option value="orgId">Org ID</option>
+                  <option value="lastName">Last name</option>
+                  <option value="firstName">First name</option>
+                  <option value="email">Email</option>
+                  <option value="role">Role</option>
+                </select>
+              </label>
+            </div>
+            <div class="attendance-table-wrap" id="attendance-roster-container"></div>
+          </section>
+
+          <section class="attendance-output-panel">
+            <div class="attendance-output-heading">
+              <div>
+                <span class="step-label">04</span>
                 <h3>Attendance output</h3>
                 <p id="attendance-output-meta">Ordered 1:1 for direct LMS paste</p>
               </div>
               <button class="btn btn-primary" id="attendance-copy-output" disabled>Copy output</button>
             </div>
             <div class="attendance-table-wrap" id="attendance-output-container">
-              <div class="empty-state"><p>No attendance data yet.</p><span class="instruction">Paste CSV data above to build the roster-aligned output.</span></div>
+              <div class="empty-state">
+                <p>No attendance data yet.</p><span class="instruction">Paste CSV data above to build the roster-aligned
+                  output.</span>
+              </div>
             </div>
           </section>
         </div>
@@ -158,7 +190,7 @@
               </select>
             </div>
           </div>
-          
+
           <div class="log-timeline-container" id="log-timeline-container">
             <!-- Dynamically populated change records -->
             <div class="empty-state">
@@ -183,4 +215,5 @@
 
   <script src="dashboard.js"></script>
 </body>
+
 </html>
