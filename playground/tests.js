@@ -688,6 +688,97 @@
     }
   }
 
+  async function testDuplicateOrgIdSelfHealsWithBothStudents() {
+    const originalData = await chrome.storage.local.get(null);
+    try {
+      const courseId = "d2l-duplicate-org-id-self-heal-course";
+      await chrome.storage.local.clear();
+      await chrome.storage.local.set({
+        courses: {},
+        changeLog: [],
+        snapshots: {
+          // Stale corruption: both students were previously merged onto one org ID.
+          [courseId]: [
+            {
+              id: "0425806",
+              orgId: "0425806",
+              username: "amanm14",
+              name: "Mann, Attamveer Singh",
+              email: "amanm14@academic.rrc.ca",
+              role: "Student",
+              status: "initial",
+              timestamp: 1,
+            },
+            {
+              id: "0425806",
+              orgId: "0425806",
+              username: "aman38",
+              name: "Mann, Attamjot Singh",
+              email: "aman38@academic.rrc.ca",
+              role: "Student",
+              status: "initial",
+              timestamp: 1,
+            },
+          ],
+        },
+      });
+
+      const urlInput = document.querySelector(".url-input");
+      const originalUrl = urlInput ? urlInput.value : "";
+      if (urlInput)
+        urlInput.value =
+          "https://learn.rrc.ca/d2l/lms/classlist/classlist.d2l?ou=753180";
+
+      // A real full classlist scan reports both students with their correct, distinct org IDs.
+      await processClasslistChanges(
+        courseId,
+        "Duplicate Org ID Self-Heal Course",
+        [
+          {
+            id: "0425777",
+            orgId: "0425777",
+            username: "amann38",
+            name: "Mann, Attamveer Singh",
+            email: "amann38@academic.rrc.ca",
+            role: "Student",
+          },
+          {
+            id: "0425806",
+            orgId: "0425806",
+            username: "amann41",
+            name: "Mann, Attamjot Singh",
+            email: "amann41@academic.rrc.ca",
+            role: "Student",
+          },
+        ],
+      );
+
+      const { snapshots } = await chrome.storage.local.get("snapshots");
+      const activeMembers = snapshots[courseId].filter(
+        (student) => student.status !== "removed",
+      );
+      assert(
+        activeMembers.length === 2,
+        "Both students should be active once distinct org IDs are seen",
+      );
+      const attamveer = activeMembers.find((s) => s.orgId === "0425777");
+      const attamjot = activeMembers.find((s) => s.orgId === "0425806");
+      assert(
+        attamveer !== undefined,
+        "Attamveer should be recovered under her correct org ID",
+      );
+      assert(
+        attamjot !== undefined,
+        "Attamjot should remain under his correct org ID",
+      );
+
+      if (urlInput) urlInput.value = originalUrl;
+    } finally {
+      await chrome.storage.local.clear();
+      await chrome.storage.local.set(originalData);
+    }
+  }
+
   async function testGradesListDoesNotRemoveD2LMembers() {
     const originalData = await chrome.storage.local.get(null);
     try {
@@ -856,6 +947,10 @@
       await runTest(
         "Duplicate Org ID reconciliation",
         testDuplicateOrgIdReconciliation,
+      );
+      await runTest(
+        "Duplicate Org ID self-heals when both students are scraped",
+        testDuplicateOrgIdSelfHealsWithBothStudents,
       );
       await runTest(
         "Grades list preserves D2L members",

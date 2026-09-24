@@ -719,7 +719,21 @@ async function processClasslistChanges(courseId, courseName, currentStudents) {
       // Find a matching student in currentStudents
       let matchIdx = currentStudents.findIndex((curr, index) => {
         if (processedIncomingIndices.has(index)) return false;
-        if (curr.orgId && prev.orgId && curr.orgId === prev.orgId) return true;
+        // A stale/corrupted snapshot can have two different students sharing one org ID;
+        // only trust the org ID match when the names don't clearly belong to different people.
+        const namesConflict =
+          curr.name &&
+          prev.name &&
+          cleanD2LName(curr.name).toLowerCase() !==
+            cleanD2LName(prev.name).toLowerCase() &&
+          !namesMatch(curr.name, prev.name);
+        if (
+          curr.orgId &&
+          prev.orgId &&
+          curr.orgId === prev.orgId &&
+          !namesConflict
+        )
+          return true;
         if (
           curr.email &&
           prev.email &&
